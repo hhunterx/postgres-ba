@@ -4,6 +4,14 @@
 LOG_FILE="/var/log/pgbackrest/backup-cron.log"
 BACKUP_TYPE=$1
 
+# Source environment variables from pgBackRest config
+if [ -f /etc/pgbackrest/pgbackrest.conf ]; then
+    PGBACKREST_STANZA=$(grep '^\[' /etc/pgbackrest/pgbackrest.conf | grep -v '^\[global\]' | sed 's/\[\(.*\)\]/\1/' | head -1)
+fi
+
+# Fallback to default if not found
+PGBACKREST_STANZA=${PGBACKREST_STANZA:-main}
+
 echo "========================================" >> $LOG_FILE
 echo "$(date): Starting ${BACKUP_TYPE} backup" >> $LOG_FILE
 echo "========================================" >> $LOG_FILE
