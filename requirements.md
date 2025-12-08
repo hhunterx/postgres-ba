@@ -1,4 +1,4 @@
-O objetico deste projeto é criar uma imagem baseada no postgres 18 (alpine) que consiga usar o pgBackRest para realizar backup no S3 e ser capaz de restaura-lo
+O objetico deste projeto é criar uma imagem baseada no postgres 18 (alpine) que consiga usar o pgBackRest para realizar backup no S3 e ser capaz de restaura-lo.
 
 Requisitos:
 
@@ -14,3 +14,5 @@ Requisitos:
 4. Tudo deve vir de variaveis de ambientes passadas para o container
 
 5. criar um docker compose com a stack pronto para uso
+
+6. criar scripts para subir/gerar/hospedar a imagem docker no github ou atraves de github/actions workflow
