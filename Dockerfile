@@ -1,10 +1,5 @@
-# Build arguments for multi-platform builds
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-ARG TARGETARCH
-
 # Build stage
-FROM --platform=$TARGETPLATFORM postgres:18-alpine AS builder
+FROM postgres:18-alpine AS builder
 
 # Install build dependencies and pgBackRest
 # Combined installation with fallback for QEMU emulation issues
@@ -14,7 +9,7 @@ RUN apk update && \
   rm -rf /var/cache/apk/*
 
 # Production stage
-FROM --platform=$TARGETPLATFORM postgres:18-alpine
+FROM postgres:18-alpine
 
 # Install runtime dependencies
 # Combined installation with fallback for QEMU emulation issues
