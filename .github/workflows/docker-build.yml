@@ -66,6 +66,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Multi-platform build (change to "linux/amd64" only if QEMU issues persist)
           platforms: linux/amd64,linux/arm64
 
       - name: Generate artifact attestation
