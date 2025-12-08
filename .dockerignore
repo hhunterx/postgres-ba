@@ -40,7 +40,13 @@ temp/
 docker-compose*.yml
 !docker-compose.yml
 
+# Build and test scripts
+build-and-deploy.sh
+test-restore.sh
+populate-db.sh
+
 # Build artifacts
 target/
 dist/
 build/
+node_modules/
