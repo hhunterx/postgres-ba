@@ -1,5 +1,10 @@
+# Build arguments for multi-platform builds
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETARCH
+
 # Build stage
-FROM postgres:18-alpine AS builder
+FROM --platform=$TARGETPLATFORM postgres:18-alpine AS builder
 
 # Install build dependencies and pgBackRest
 RUN apk add --no-cache \
@@ -9,7 +14,7 @@ RUN apk add --no-cache \
   && rm -rf /var/cache/apk/*
 
 # Production stage
-FROM postgres:18-alpine
+FROM --platform=$TARGETPLATFORM postgres:18-alpine
 
 # Install runtime dependencies
 RUN apk add --no-cache \
