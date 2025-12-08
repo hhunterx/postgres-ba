@@ -7,27 +7,28 @@ ARG TARGETARCH
 FROM --platform=$TARGETPLATFORM postgres:18-alpine AS builder
 
 # Install build dependencies and pgBackRest
-RUN apk add --no-cache \
-  bash \
-  dcron \
-  curl \
-  && rm -rf /var/cache/apk/*
+# Split installations to avoid QEMU emulation issues
+RUN apk update && apk upgrade
+RUN apk add --no-cache bash
+RUN apk add --no-cache dcron
+RUN apk add --no-cache curl
+RUN rm -rf /var/cache/apk/*
 
 # Production stage
 FROM --platform=$TARGETPLATFORM postgres:18-alpine
 
 # Install runtime dependencies
-RUN apk add --no-cache \
-  bash \
-  dcron \
-  curl \
-  && rm -rf /var/cache/apk/*
+# Split installations to avoid QEMU emulation issues
+RUN apk update && apk upgrade
+RUN apk add --no-cache bash
+RUN apk add --no-cache dcron
+RUN apk add --no-cache curl
+RUN rm -rf /var/cache/apk/*
 
 # Install pgBackRest and PostgreSQL extensions
-RUN apk add --no-cache \
-  pgbackrest \
-  postgresql-contrib \
-  && rm -rf /var/cache/apk/*
+RUN apk add --no-cache pgbackrest
+RUN apk add --no-cache postgresql-contrib
+RUN rm -rf /var/cache/apk/*
 
 # Create necessary directories
 RUN mkdir -p /var/log/pgbackrest \
