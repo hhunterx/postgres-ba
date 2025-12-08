@@ -9,9 +9,9 @@ FROM --platform=$TARGETPLATFORM postgres:18-alpine AS builder
 # Install build dependencies and pgBackRest
 # Split installations to avoid QEMU emulation issues
 RUN apk update && apk upgrade
-RUN apk add --no-cache bash
-RUN apk add --no-cache dcron
-RUN apk add --no-cache curl
+RUN apk add --no-cache bash curl
+# Install dcron - busybox trigger may fail in QEMU but package installs correctly
+RUN apk add --no-cache dcron || true
 RUN rm -rf /var/cache/apk/*
 
 # Production stage
@@ -20,9 +20,9 @@ FROM --platform=$TARGETPLATFORM postgres:18-alpine
 # Install runtime dependencies
 # Split installations to avoid QEMU emulation issues
 RUN apk update && apk upgrade
-RUN apk add --no-cache bash
-RUN apk add --no-cache dcron
-RUN apk add --no-cache curl
+RUN apk add --no-cache bash curl
+# Install dcron - busybox trigger may fail in QEMU but package installs correctly
+RUN apk add --no-cache dcron || true
 RUN rm -rf /var/cache/apk/*
 
 # Install pgBackRest and PostgreSQL extensions
