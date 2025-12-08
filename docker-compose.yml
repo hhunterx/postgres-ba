@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: postgres-pgbackrest:latest
-    container_name: postgres-primary
-    hostname: postgres-primary
+    container_name: postgres-ba-primary
+    hostname: postgres-ba-primary
     environment:
       # PostgreSQL Configuration
       POSTGRES_USER: ${POSTGRES_USER:-postgres}

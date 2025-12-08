@@ -9,16 +9,16 @@ CRON_FILE="/tmp/postgres-crontab"
 cat > $CRON_FILE <<EOF
 # PostgreSQL Backup Schedule
 # Incremental backups every 30 minutes
-*/30 * * * * /usr/local/bin/backup-cron.sh incr
+*/30 * * * * su - postgres -c '/usr/local/bin/backup-cron.sh incr'
 
 # Differential backup once a day at 2 AM
-0 2 * * * /usr/local/bin/backup-cron.sh diff
+0 2 * * * su - postgres -c '/usr/local/bin/backup-cron.sh diff'
 
 # Full backup once a week on Sunday at 3 AM
-0 3 * * 0 /usr/local/bin/backup-cron.sh full
+0 3 * * 0 su - postgres -c '/usr/local/bin/backup-cron.sh full'
 EOF
 
-# Install crontab
+# Install crontab for root user
 crontab $CRON_FILE
 
 # Remove temp file

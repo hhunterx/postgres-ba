@@ -1,24 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "=========================================="
-echo "PostgreSQL with pgBackRest - Starting up"
-echo "=========================================="
+# This script runs as postgres user
 
-# Run as root for initial setup if needed
-if [ "$(id -u)" = '0' ]; then
-    # Configure pgBackRest as root
-    echo "Configuring pgBackRest..."
-    /usr/local/bin/configure-pgbackrest.sh
-    
-    # Ensure proper permissions
-    chown -R postgres:postgres /etc/pgbackrest /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest
-    
-    # Re-exec as postgres user
-    exec gosu postgres "$0" "$@"
-fi
-
-# Now running as postgres user
+echo "=========================================="
+echo "PostgreSQL with pgBackRest - Starting"
+echo "=========================================="
 
 # Check if this is a replica or primary
 if [ "${PG_MODE}" = "replica" ]; then
@@ -64,13 +51,6 @@ else
         echo "Will initialize new database via docker-entrypoint.sh..."
     fi
 fi
-
-# Setup cron jobs for backups (as root)
-echo "Setting up backup cron jobs..."
-gosu root /usr/local/bin/setup-cron.sh
-
-# Start cron in background (as root)
-gosu root crond -b -l 8
 
 echo "=========================================="
 echo "Starting PostgreSQL server..."
