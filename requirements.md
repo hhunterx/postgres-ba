@@ -20,3 +20,5 @@ Requisitos:
 7. criar um docker compose com a stack pronto para uso
 
 8. criar scripts para subir/gerar/hospedar a imagem docker no github ou atraves de github/actions workflow
+
+9. criar gitignore e dockergnore e outros padroes dos repositorios git
