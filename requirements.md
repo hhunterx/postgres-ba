@@ -9,10 +9,14 @@ Requisitos:
 
 2. os backups devem ser feitos atraves de uma cron no proprio container
 
-3. a imagem deve ser capaz de ser uma replica ou um primary
+3. devemos suportar backups full (semanais) diff (1x ao dia) e incr (a cada 30 minutos)
 
-4. Tudo deve vir de variaveis de ambientes passadas para o container
+4. Configurar o PostgreSQL para enviar cada WAL fragmentado (archive_timeout) a cada 60s para que o pgbackrest envie para o s3 backups por minuto
 
-5. criar um docker compose com a stack pronto para uso
+5. a imagem deve ser capaz de ser uma replica ou um primary
 
-6. criar scripts para subir/gerar/hospedar a imagem docker no github ou atraves de github/actions workflow
+6. Tudo deve vir de variaveis de ambientes passadas para o container
+
+7. criar um docker compose com a stack pronto para uso
+
+8. criar scripts para subir/gerar/hospedar a imagem docker no github ou atraves de github/actions workflow
