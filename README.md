@@ -1,0 +1,393 @@
+# PostgreSQL with pgBackRest S3 Backup
+
+Docker image based on PostgreSQL 18 (Alpine) with automated pgBackRest backups to S3.
+
+## Features
+
+- ✅ PostgreSQL 18 on Alpine Linux
+- ✅ pgBackRest for enterprise-grade backup and restore
+- ✅ Automated backups to S3 (full, differential, incremental)
+- ✅ Automatic restore from S3 on first startup
+- ✅ WAL archiving every 60 seconds
+- ✅ Primary/Replica support
+- ✅ Configurable via environment variables
+- ✅ Automated cron-based backup scheduling
+
+## Backup Schedule
+
+- **Incremental**: Every 30 minutes
+- **Differential**: Daily at 2 AM
+- **Full**: Weekly on Sunday at 3 AM
+- **WAL Archives**: Every 60 seconds
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd postgres-ba
+```
+
+### 2. Configure Environment Variables
+
+Copy the example environment file and edit it with your S3 credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your S3 configuration:
+
+```env
+S3_BUCKET=your-s3-bucket-name
+S3_ACCESS_KEY=your-access-key
+S3_SECRET_KEY=your-secret-key
+S3_REGION=us-east-1
+```
+
+### 3. Start the Stack
+
+```bash
+docker-compose up -d
+```
+
+### 4. Check Logs
+
+```bash
+docker-compose logs -f postgres
+```
+
+## Environment Variables
+
+### PostgreSQL Configuration
+
+| Variable            | Description                   | Default    |
+| ------------------- | ----------------------------- | ---------- |
+| `POSTGRES_USER`     | PostgreSQL superuser name     | `postgres` |
+| `POSTGRES_PASSWORD` | PostgreSQL superuser password | `changeme` |
+| `POSTGRES_DB`       | Default database name         | `postgres` |
+| `POSTGRES_PORT`     | PostgreSQL port               | `5432`     |
+
+### Mode Configuration
+
+| Variable              | Description                          | Default   |
+| --------------------- | ------------------------------------ | --------- |
+| `PG_MODE`             | Server mode (`primary` or `replica`) | `primary` |
+| `RESTORE_FROM_BACKUP` | Restore from S3 on first startup     | `false`   |
+
+### Backup Configuration
+
+| Variable                 | Description                              | Default |
+| ------------------------ | ---------------------------------------- | ------- |
+| `PGBACKREST_STANZA`      | pgBackRest stanza name                   | `main`  |
+| `PGBACKREST_PROCESS_MAX` | Max parallel backup processes            | `4`     |
+| `RETENTION_FULL`         | Number of full backups to retain         | `4`     |
+| `RETENTION_DIFF`         | Number of differential backups to retain | `4`     |
+
+### S3 Configuration (Required)
+
+| Variable        | Description              | Default            |
+| --------------- | ------------------------ | ------------------ |
+| `S3_BUCKET`     | S3 bucket name           | **(required)**     |
+| `S3_ACCESS_KEY` | S3 access key            | **(required)**     |
+| `S3_SECRET_KEY` | S3 secret key            | **(required)**     |
+| `S3_ENDPOINT`   | S3 endpoint URL          | `s3.amazonaws.com` |
+| `S3_REGION`     | S3 region                | `us-east-1`        |
+| `S3_PATH`       | Path prefix in S3 bucket | `/pgbackrest`      |
+
+### Performance Tuning
+
+| Variable                | Description              | Default |
+| ----------------------- | ------------------------ | ------- |
+| `SHARED_BUFFERS`        | Shared buffer size       | `256MB` |
+| `EFFECTIVE_CACHE_SIZE`  | Effective cache size     | `1GB`   |
+| `MAINTENANCE_WORK_MEM`  | Maintenance work memory  | `64MB`  |
+| `WORK_MEM`              | Work memory per query    | `4MB`   |
+| `MAX_WAL_SENDERS`       | Max WAL sender processes | `10`    |
+| `MAX_REPLICATION_SLOTS` | Max replication slots    | `10`    |
+
+## Usage Examples
+
+### First Time Setup (New Database)
+
+```bash
+# Configure .env with your S3 credentials
+docker-compose up -d
+
+# The container will:
+# 1. Initialize a new PostgreSQL database
+# 2. Configure pgBackRest
+# 3. Create initial full backup to S3
+# 4. Start PostgreSQL
+# 5. Begin automated backup schedule
+```
+
+### Restore from Existing Backup
+
+```bash
+# Set RESTORE_FROM_BACKUP=true in .env
+RESTORE_FROM_BACKUP=true
+
+# Start the container
+docker-compose up -d
+
+# The container will:
+# 1. Restore latest backup from S3
+# 2. Start PostgreSQL with restored data
+# 3. Resume automated backup schedule
+```
+
+### Manual Backup Operations
+
+```bash
+# Enter the container
+docker exec -it postgres-primary bash
+
+# View backup information
+pgbackrest --stanza=main info
+
+# Perform manual full backup
+pgbackrest --stanza=main --type=full backup
+
+# Perform manual differential backup
+pgbackrest --stanza=main --type=diff backup
+
+# Perform manual incremental backup
+pgbackrest --stanza=main --type=incr backup
+```
+
+### View Backup Logs
+
+```bash
+# View automated backup logs
+docker exec -it postgres-primary cat /var/log/pgbackrest/backup-cron.log
+
+# Follow backup logs in real-time
+docker exec -it postgres-primary tail -f /var/log/pgbackrest/backup-cron.log
+```
+
+## Building the Docker Image
+
+### Local Build
+
+```bash
+docker build -t postgres-pgbackrest:latest .
+```
+
+### Using GitHub Actions
+
+The repository includes a GitHub Actions workflow that automatically builds and pushes the image to GitHub Container Registry (ghcr.io) on:
+
+- Push to `main` or `develop` branches
+- Tagged releases (e.g., `v1.0.0`)
+- Manual workflow dispatch
+
+To use GitHub Actions:
+
+1. Enable GitHub Actions in your repository
+2. Push to the main branch or create a tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+3. The image will be available at: `ghcr.io/<your-username>/postgres-ba:latest`
+
+## Architecture
+
+### Directory Structure
+
+```
+.
+├── Dockerfile                  # Main Docker image definition
+├── docker-compose.yml         # Docker Compose stack
+├── .env.example              # Environment variables template
+├── scripts/
+│   ├── entrypoint.sh         # Main entrypoint script
+│   ├── configure-postgres.sh # PostgreSQL configuration
+│   ├── configure-pgbackrest.sh # pgBackRest configuration
+│   ├── backup-cron.sh        # Backup execution script
+│   └── setup-cron.sh         # Cron job setup
+├── .github/
+│   └── workflows/
+│       └── docker-build.yml  # GitHub Actions workflow
+├── .gitignore
+├── .dockerignore
+└── README.md
+```
+
+### How It Works
+
+1. **Entrypoint Process**:
+
+   - Configures pgBackRest with S3 credentials
+   - Checks if PostgreSQL data exists
+   - If no data and `RESTORE_FROM_BACKUP=true`, restores from S3
+   - If no data and `RESTORE_FROM_BACKUP=false`, initializes new database
+   - Configures PostgreSQL for WAL archiving
+   - Sets up automated backup cron jobs
+   - Starts PostgreSQL
+
+2. **Backup Process**:
+
+   - Cron triggers backup scripts at scheduled intervals
+   - pgBackRest performs backup (full/diff/incr) to S3
+   - WAL files are archived to S3 every 60 seconds
+   - Backup logs are maintained in `/var/log/pgbackrest/`
+
+3. **Restore Process**:
+   - On first startup with empty data directory
+   - Fetches latest backup from S3
+   - Restores database to the point of latest backup
+   - Replays WAL files for point-in-time recovery
+
+## S3 Bucket Setup
+
+Your S3 bucket should have the following permissions for the IAM user:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::your-bucket-name"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::your-bucket-name/*"
+    }
+  ]
+}
+```
+
+## Monitoring
+
+### Check PostgreSQL Status
+
+```bash
+docker exec -it postgres-primary pg_isready
+```
+
+### Check Backup Status
+
+```bash
+docker exec -it postgres-primary pgbackrest --stanza=main info
+```
+
+### Check Cron Jobs
+
+```bash
+docker exec -it postgres-primary crontab -l
+```
+
+### Database Management UI
+
+Access Adminer at http://localhost:8080
+
+- Server: `postgres`
+- Username: Value from `POSTGRES_USER`
+- Password: Value from `POSTGRES_PASSWORD`
+- Database: Value from `POSTGRES_DB`
+
+## Troubleshooting
+
+### Backups Not Running
+
+Check cron status:
+
+```bash
+docker exec -it postgres-primary ps aux | grep crond
+```
+
+Check backup logs:
+
+```bash
+docker exec -it postgres-primary cat /var/log/pgbackrest/backup-cron.log
+```
+
+### S3 Connection Issues
+
+Verify S3 credentials and test connectivity:
+
+```bash
+docker exec -it postgres-primary pgbackrest --stanza=main check
+```
+
+### PostgreSQL Not Starting
+
+Check PostgreSQL logs:
+
+```bash
+docker-compose logs postgres
+```
+
+Check disk space:
+
+```bash
+docker exec -it postgres-primary df -h
+```
+
+## Security Considerations
+
+1. **Always change default passwords** in production
+2. **Use strong S3 credentials** and rotate them regularly
+3. **Enable S3 bucket encryption** for data at rest
+4. **Use SSL/TLS** for S3 connections in production
+5. **Restrict network access** using Docker networks
+6. **Keep the image updated** with security patches
+
+## Performance Tuning
+
+Adjust PostgreSQL settings based on your hardware:
+
+```env
+# For 8GB RAM system
+SHARED_BUFFERS=2GB
+EFFECTIVE_CACHE_SIZE=6GB
+MAINTENANCE_WORK_MEM=512MB
+WORK_MEM=16MB
+```
+
+Adjust backup parallelism:
+
+```env
+# For better backup performance
+PGBACKREST_PROCESS_MAX=8
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Support
+
+For issues and questions:
+
+- Open an issue on GitHub
+- Check pgBackRest documentation: https://pgbackrest.org/
+- Check PostgreSQL documentation: https://www.postgresql.org/docs/
+
+## Changelog
+
+### v1.0.0
+
+- Initial release
+- PostgreSQL 18 with pgBackRest
+- Automated S3 backups (full/diff/incr)
+- WAL archiving every 60 seconds
+- Automated restore from S3
+- Docker Compose stack
+- GitHub Actions CI/CD
