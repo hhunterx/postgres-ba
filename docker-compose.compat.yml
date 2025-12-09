@@ -29,8 +29,9 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - postgres_ca:/var/lib/postgresql/ca
-      - postgres_ssl:/var/lib/postgresql/ssl
+      # SSL volumes are optional - uncomment to persist SSL certificates across restarts
+      # - postgres_ca:/var/lib/postgresql/ca
+      # - postgres_ssl:/var/lib/postgresql/ssl
     networks:
       - solution-network
     deploy:
@@ -48,10 +49,13 @@ services:
       retries: 5
 
 volumes:
-  postgres_ca:
-    driver: local
-  postgres_ssl:
-    driver: local
+  # Optional volumes for SSL certificate persistence
+  # Uncomment to persist SSL certificates across container restarts
+  # postgres_ca:
+  #   driver: local
+  # postgres_ssl:
+  #   driver: local
+  postgres_data: {}
 
 networks:
   solution-network:
