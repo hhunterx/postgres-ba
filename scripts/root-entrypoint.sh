@@ -15,6 +15,10 @@ chown -R postgres:postgres /var/lib/postgresql/data
 echo "Configuring pgBackRest..."
 /usr/local/bin/configure-pgbackrest.sh
 
+# Configure SSL certificates with CA
+echo "Configuring SSL certificates..."
+/usr/local/bin/configure-ssl-with-ca.sh
+
 # Ensure proper permissions
 chown -R postgres:postgres /etc/pgbackrest /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest
 

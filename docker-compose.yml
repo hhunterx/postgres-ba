@@ -47,6 +47,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - postgres_logs:/var/log/pgbackrest
+      - postgres_ca:/var/lib/postgresql/ca
+      - postgres_ssl:/var/lib/postgresql/ssl
     networks:
       - postgres_network
     restart: unless-stopped
@@ -74,6 +76,10 @@ volumes:
   postgres_data:
     driver: local
   postgres_logs:
+    driver: local
+  postgres_ca:
+    driver: local
+  postgres_ssl:
     driver: local
 
 networks:

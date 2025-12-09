@@ -4,8 +4,8 @@ FROM postgres:18-alpine AS builder
 # Install build dependencies and pgBackRest
 # Combined installation with fallback for QEMU emulation issues
 RUN apk update && \
-  (apk add --no-cache bash curl dcron || \
-  (apk add --no-cache bash curl && apk add --no-cache dcron || true)) && \
+  (apk add --no-cache bash curl dcron openssl || \
+  (apk add --no-cache bash curl openssl && apk add --no-cache dcron || true)) && \
   rm -rf /var/cache/apk/*
 
 # Production stage
@@ -14,8 +14,8 @@ FROM postgres:18-alpine
 # Install runtime dependencies
 # Combined installation with fallback for QEMU emulation issues
 RUN apk update && \
-  (apk add --no-cache bash curl dcron || \
-  (apk add --no-cache bash curl && apk add --no-cache dcron || true)) && \
+  (apk add --no-cache bash curl dcron openssl || \
+  (apk add --no-cache bash curl openssl && apk add --no-cache dcron || true)) && \
   rm -rf /var/cache/apk/*
 
 # Install pgBackRest and PostgreSQL extensions
@@ -38,6 +38,7 @@ COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
 COPY scripts/setup-cron.sh /usr/local/bin/setup-cron.sh
 COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
+COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
 COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 
 # Make scripts executable
@@ -47,6 +48,7 @@ RUN chmod +x /usr/local/bin/root-entrypoint.sh \
   /usr/local/bin/setup-cron.sh \
   /usr/local/bin/configure-postgres.sh \
   /usr/local/bin/configure-pgbackrest.sh \
+  /usr/local/bin/configure-ssl-with-ca.sh \
   /docker-entrypoint-initdb.d/init-db.sh
 
 # Health check
