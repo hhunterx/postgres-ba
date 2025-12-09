@@ -40,15 +40,15 @@ log_autovacuum_min_duration = 0
 log_error_verbosity = default
 
 # Performance
-shared_buffers = ${SHARED_BUFFERS:-256MB}
-effective_cache_size = ${EFFECTIVE_CACHE_SIZE:-1GB}
-maintenance_work_mem = ${MAINTENANCE_WORK_MEM:-64MB}
+shared_buffers = ${SHARED_BUFFERS:-1GB}
+effective_cache_size = ${EFFECTIVE_CACHE_SIZE:-3GB}
+maintenance_work_mem = ${MAINTENANCE_WORK_MEM:-256MB}
 checkpoint_completion_target = 0.9
 wal_buffers = 16MB
 default_statistics_target = 100
 random_page_cost = 1.1
 effective_io_concurrency = 200
-work_mem = ${WORK_MEM:-4MB}
+work_mem = ${WORK_MEM:-16MB}
 min_wal_size = 1GB
 max_wal_size = 4GB
 EOF
