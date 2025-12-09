@@ -15,7 +15,6 @@ Toda a implementação de SSL com CA compartilhada foi validada e está funciona
 - [x] `scripts/configure-ssl-with-ca.sh` - Novo script para gerar CA e certificados
 - [x] `scripts/configure-postgres.sh` - Atualizado com configurações SSL
 - [x] `scripts/entrypoint-compat.sh` - Atualizado para chamar `configure-ssl-with-ca.sh`
-- [x] `scripts/pg-entrypoint.sh` - Verificado (funciona corretamente)
 - [x] `Dockerfile` - Atualizado com openssl e cópia do novo script
 - [x] `docker-compose.yml` - Volumes SSL e CA adicionados
 - [x] `docker-compose.cluster.yml` - Volumes SSL e CA adicionados para primary e replica

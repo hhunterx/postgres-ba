@@ -8,6 +8,9 @@ CRON_FILE="/tmp/postgres-crontab"
 
 cat > $CRON_FILE <<EOF
 # PostgreSQL Backup Schedule
+# Run init-db.sh on startup if needed (for existing databases with pgBackRest)
+@reboot sleep 25 && [ -f /tmp/pgbackrest-needs-init ] && /usr/local/bin/run-init-db.sh >> /var/log/pgbackrest/init-db.log 2>&1 && rm -f /tmp/pgbackrest-needs-init
+
 # Incremental backups every 30 minutes
 */30 * * * * su - postgres -c '/usr/local/bin/backup-cron.sh incr'
 

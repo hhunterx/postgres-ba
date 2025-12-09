@@ -33,27 +33,25 @@ RUN mkdir -p /var/log/pgbackrest \
   && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest /tmp/pgbackrest
 
 # Copy scripts
-COPY scripts/pg-entrypoint.sh /usr/local/bin/pg-entrypoint.sh
 COPY scripts/entrypoint-compat.sh /usr/local/bin/entrypoint-compat.sh
 COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
 COPY scripts/setup-cron.sh /usr/local/bin/setup-cron.sh
 COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
 COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
-COPY scripts/ensure-postgres-user.sh /usr/local/bin/ensure-postgres-user.sh
 COPY scripts/pgbackrest-wrapper.sh /usr/local/bin/pgbackrest-wrapper.sh
+COPY scripts/run-init-db.sh /usr/local/bin/run-init-db.sh
 COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 
 # Make scripts executable
-RUN chmod +x /usr/local/bin/pg-entrypoint.sh \
-  /usr/local/bin/entrypoint-compat.sh \
+RUN chmod +x /usr/local/bin/entrypoint-compat.sh \
   /usr/local/bin/backup-cron.sh \
   /usr/local/bin/setup-cron.sh \
   /usr/local/bin/configure-postgres.sh \
   /usr/local/bin/configure-pgbackrest.sh \
   /usr/local/bin/configure-ssl-with-ca.sh \
-  /usr/local/bin/ensure-postgres-user.sh \
   /usr/local/bin/pgbackrest-wrapper.sh \
+  /usr/local/bin/run-init-db.sh \
   /docker-entrypoint-initdb.d/init-db.sh
 
 # Replace pgbackrest with wrapper to avoid environment variable warnings
