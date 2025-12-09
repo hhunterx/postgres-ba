@@ -34,6 +34,7 @@ services:
       # Retention Configuration
       RETENTION_FULL: ${RETENTION_FULL:-3}
       RETENTION_DIFF: ${RETENTION_DIFF:-14}
+      RETENTION_ARCHIVE: ${RETENTION_ARCHIVE:-2}
       
       # PostgreSQL Performance Configuration
       SHARED_BUFFERS: ${SHARED_BUFFERS:-1GB}
@@ -92,6 +93,7 @@ services:
       # Retention Configuration
       RETENTION_FULL: ${RETENTION_FULL:-3}
       RETENTION_DIFF: ${RETENTION_DIFF:-14}
+      RETENTION_ARCHIVE: ${RETENTION_ARCHIVE:-2}
       
       # PostgreSQL Performance Configuration
       SHARED_BUFFERS: ${SHARED_BUFFERS:-1GB}
