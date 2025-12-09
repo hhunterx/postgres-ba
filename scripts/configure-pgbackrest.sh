@@ -1,7 +1,12 @@
 #!/bin/bash
 set -e
 
+# Set default PGDATA if not provided
+PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+export PGDATA
+
 echo "Configuring pgBackRest..."
+echo "Using PGDATA: $PGDATA"
 
 # Create pgBackRest configuration file
 cat > /etc/pgbackrest/pgbackrest.conf <<EOF

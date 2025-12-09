@@ -1,7 +1,12 @@
 #!/bin/bash
 set -e
 
+# Set default PGDATA if not provided
+PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+export PGDATA
+
 echo "Configuring PostgreSQL..."
+echo "Using PGDATA: $PGDATA"
 
 # Configure pgBackRest-specific settings only if stanza is defined
 if [ "${PGBACKREST_STANZA}" != "" ]; then

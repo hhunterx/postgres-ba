@@ -14,11 +14,10 @@ chown -R postgres:postgres /var/lib/postgresql/data
 
 # Configure pgBackRest (if enabled)
 if [ "${PGBACKREST_STANZA}" != "" ]; then
-    echo "Configuring pgBackRest..."
+    # Configuring pgBackRest
     /usr/local/bin/configure-pgbackrest.sh || true
     
     # Setup cron jobs for backups
-    echo "Setting up backup cron jobs..."
     /usr/local/bin/setup-cron.sh || true
     
     # Start cron in background

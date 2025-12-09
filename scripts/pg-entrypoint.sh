@@ -3,8 +3,13 @@ set -e
 
 # This script runs as postgres user
 
+# Set default PGDATA if not provided
+PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+export PGDATA
+
 echo "=========================================="
 echo "PostgreSQL with pgBackRest - Starting"
+echo "Using PGDATA: $PGDATA"
 echo "=========================================="
 
 # Check if this is a replica or primary
