@@ -13,7 +13,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
       
       # Mode Configuration
       PG_MODE: ${PG_MODE:-primary}
@@ -46,7 +45,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - postgres_logs:/var/log/pgbackrest
       - postgres_ca:/var/lib/postgresql/ca
       - postgres_ssl:/var/lib/postgresql/ssl

@@ -20,7 +20,7 @@ postgres:
   ports:
     - "5432:5432"
   volumes:
-    - ./data/postgres:/var/lib/postgresql/data
+    - ./data/postgres:/var/lib/postgresql
     - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U solution_user -d solution_db"]
@@ -44,7 +44,7 @@ postgres:
   ports:
     - "5432:5432"
   volumes:
-    - ./data/postgres:/var/lib/postgresql/data
+    - ./data/postgres:/var/lib/postgresql
     - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     - postgres_ca:/var/lib/postgresql/ca
     - postgres_ssl:/var/lib/postgresql/ssl
@@ -97,7 +97,7 @@ DROP TABLE test_compat;
 
 ### ✅ 5. Volumes
 
-- [x] `/var/lib/postgresql/data` - Funciona
+- [x] `/var/lib/postgresql` - Funciona
 - [x] `/docker-entrypoint-initdb.d/` - Scripts executam
 - [x] `/var/lib/postgresql/ca` - SSL CA (novo, não impede uso)
 - [x] `/var/lib/postgresql/ssl` - SSL certs (novo, não impede uso)

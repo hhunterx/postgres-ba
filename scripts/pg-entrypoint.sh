@@ -4,7 +4,7 @@ set -e
 # This script runs as postgres user
 
 # Set default PGDATA if not provided
-PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 export PGDATA
 
 echo "=========================================="

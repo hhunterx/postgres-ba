@@ -29,7 +29,8 @@ RUN mkdir -p /var/log/pgbackrest \
   /var/spool/pgbackrest \
   /etc/pgbackrest \
   /etc/pgbackrest/conf.d \
-  && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest
+  /tmp/pgbackrest \
+  && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest /tmp/pgbackrest
 
 # Copy scripts
 COPY scripts/pg-entrypoint.sh /usr/local/bin/pg-entrypoint.sh

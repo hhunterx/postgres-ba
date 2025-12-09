@@ -255,7 +255,7 @@ docker exec postgres-cluster-primary cat /etc/pgbackrest/pgbackrest.conf
 docker exec postgres-cluster-replica pg_isready -h postgres-cluster-primary -p 5432
 
 # Verificar pg_hba.conf do primary
-docker exec postgres-cluster-primary cat /var/lib/postgresql/data/pgdata/pg_hba.conf
+docker exec postgres-cluster-primary cat /var/lib/postgresql/18/docker/pg_hba.conf
 ```
 
 ### Restauração falha

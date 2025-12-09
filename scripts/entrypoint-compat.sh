@@ -9,8 +9,8 @@ echo "PostgreSQL with pgBackRest - Initialization"
 echo "=========================================="
 
 # Ensure PostgreSQL data directory parent has correct permissions
-mkdir -p /var/lib/postgresql/data
-chown -R postgres:postgres /var/lib/postgresql/data
+mkdir -p /var/lib/postgresql/18/docker
+chown -R postgres:postgres /var/lib/postgresql/18/docker
 
 # Configure pgBackRest (if enabled)
 if [ "${PGBACKREST_STANZA}" != "" ]; then
@@ -24,7 +24,8 @@ if [ "${PGBACKREST_STANZA}" != "" ]; then
     crond -b -l 8 || true
     
     # Ensure proper permissions
-    chown -R postgres:postgres /etc/pgbackrest /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest 2>/dev/null || true
+    mkdir -p /tmp/pgbackrest
+    chown -R postgres:postgres /etc/pgbackrest /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /tmp/pgbackrest 2>/dev/null || true
 fi
 
 # Configure SSL certificates with CA

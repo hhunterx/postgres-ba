@@ -13,7 +13,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
       
       # Mode Configuration - PRIMARY restaurado do S3
       PG_MODE: primary
@@ -46,7 +45,7 @@ services:
     ports:
       - "${POSTGRES_PRIMARY_PORT:-5433}:5432"
     volumes:
-      - postgres_cluster_primary_data:/var/lib/postgresql/data
+      - postgres_cluster_primary_data:/var/lib/postgresql
       - postgres_cluster_primary_logs:/var/log/pgbackrest
       - postgres_cluster_ca:/var/lib/postgresql/ca
       - postgres_cluster_primary_ssl:/var/lib/postgresql/ssl
@@ -71,7 +70,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
       
       # Mode Configuration - REPLICA clonada do PRIMARY via pg_basebackup
       PG_MODE: replica
@@ -105,7 +103,7 @@ services:
     ports:
       - "${POSTGRES_REPLICA_PORT:-5434}:5432"
     volumes:
-      - postgres_cluster_replica_data:/var/lib/postgresql/data
+      - postgres_cluster_replica_data:/var/lib/postgresql
       - postgres_cluster_replica_logs:/var/log/pgbackrest
       - postgres_cluster_ca:/var/lib/postgresql/ca
       - postgres_cluster_replica_ssl:/var/lib/postgresql/ssl

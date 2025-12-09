@@ -2,7 +2,7 @@
 set -e
 
 # Set default PGDATA if not provided
-PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 export PGDATA
 
 echo "Configuring PostgreSQL..."

@@ -5,7 +5,7 @@ set -e
 unset s3-bucket s3-endpoint s3-region s3-access-key s3-secret-key s3-path 2>/dev/null || true
 
 # Set default PGDATA if not provided
-PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
+PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 export PGDATA
 
 echo "Configuring pgBackRest..."

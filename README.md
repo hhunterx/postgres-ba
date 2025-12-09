@@ -136,7 +136,7 @@ postgres:
   ports:
     - "5432:5432"
   volumes:
-    - ./data:/var/lib/postgresql/data
+    - ./data:/var/lib/postgresql
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U my_user -d my_database"]
