@@ -20,7 +20,9 @@ process-max=${PGBACKREST_PROCESS_MAX:-4}
 log-level-console=info
 log-level-file=debug
 start-fast=y
+stop-auto=y
 delta=y
+archive-async=y
 
 [${PGBACKREST_STANZA}]
 pg1-path=${PGDATA}
