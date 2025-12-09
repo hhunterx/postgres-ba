@@ -9,6 +9,8 @@ Docker image based on PostgreSQL 18 (Alpine) with automated pgBackRest backups t
 - ✅ Automated backups to S3 (full, differential, incremental)
 - ✅ Automatic restore from S3 on first startup
 - ✅ WAL archiving every 60 seconds
+- ✅ **SSL/TLS with Self-Signed Certificates (10 years validity)**
+- ✅ **Shared CA for Primary/Replica validation**
 - ✅ Primary/Replica support
 - ✅ Configurable via environment variables
 - ✅ Automated cron-based backup scheduling
@@ -19,6 +21,32 @@ Docker image based on PostgreSQL 18 (Alpine) with automated pgBackRest backups t
 - **Differential**: Daily at 2 AM
 - **Full**: Weekly on Sunday at 3 AM
 - **WAL Archives**: Every 60 seconds
+
+## SSL/TLS Configuration
+
+All connections are encrypted with SSL/TLS using self-signed certificates:
+
+- ✅ Certificates valid for 10 years
+- ✅ Automatically generated on first startup
+- ✅ Shared CA for Primary/Replica validation in cluster mode
+- ✅ Unique server certificate per instance
+- ✅ Persistent storage in Docker volumes
+- ✅ Mandatory SSL for replication connections (`hostssl`)
+
+### SSL Volumes
+
+**Single Instance:**
+
+- `postgres_ca` - Shared CA directory
+- `postgres_ssl` - Server certificate directory
+
+**Cluster Mode:**
+
+- `postgres_cluster_ca` - Shared CA (used by primary and replicas)
+- `postgres_cluster_primary_ssl` - Primary server certificates
+- `postgres_cluster_replica_ssl` - Replica server certificates
+
+For detailed SSL configuration, see [SSL Configuration Guide](docs/ssl-configuration.md)
 
 ## Quick Start
 
@@ -106,6 +134,14 @@ docker-compose logs -f postgres
 | `WORK_MEM`              | Work memory per query    | `4MB`   |
 | `MAX_WAL_SENDERS`       | Max WAL sender processes | `10`    |
 | `MAX_REPLICATION_SLOTS` | Max replication slots    | `10`    |
+
+### SSL Configuration
+
+| Variable       | Description                | Default                        |
+| -------------- | -------------------------- | ------------------------------ |
+| `CA_DIR`       | Certificate Authority path | `/var/lib/postgresql/ca`       |
+| `SSL_CERT_DIR` | SSL certificate directory  | `/var/lib/postgresql/ssl`      |
+| `SERVER_NAME`  | Server hostname for CN     | `$(hostname)` (container name) |
 
 ## Usage Examples
 
@@ -294,6 +330,25 @@ Access Adminer at http://localhost:8080
 - Password: Value from `POSTGRES_PASSWORD`
 - Database: Value from `POSTGRES_DB`
 
+### SSL Connection Examples
+
+Connect to PostgreSQL with SSL required:
+
+```bash
+# From host (requires psql installed)
+PGPASSWORD=changeme psql -h localhost -U postgres \
+  --set=sslmode=require -c "SELECT version();"
+
+# From inside container
+docker exec -it postgres-ba-primary psql -h localhost -U postgres \
+  --set=sslmode=require -c "SELECT version();"
+
+# Test SSL connection with openssl
+echo "" | openssl s_client -connect localhost:5432 -starttls postgres
+```
+
+**Note:** Self-signed certificates will show verification warnings, which is expected for development environments.
+
 ## Troubleshooting
 
 ### Backups Not Running
@@ -334,12 +389,34 @@ docker exec -it postgres-primary df -h
 
 ## Security Considerations
 
-1. **Always change default passwords** in production
-2. **Use strong S3 credentials** and rotate them regularly
-3. **Enable S3 bucket encryption** for data at rest
-4. **Use SSL/TLS** for S3 connections in production
-5. **Restrict network access** using Docker networks
-6. **Keep the image updated** with security patches
+1. **SSL/TLS Encryption**: All connections are encrypted with self-signed SSL certificates
+2. **Always change default passwords** in production
+3. **Use strong S3 credentials** and rotate them regularly
+4. **Enable S3 bucket encryption** for data at rest
+5. **Use SSL/TLS** for S3 connections in production
+6. **Restrict network access** using Docker networks
+7. **Keep the image updated** with security patches
+
+### Certificate Management
+
+- Certificates are automatically generated on first startup
+- Valid for 10 years from generation date
+- Stored in persistent Docker volumes
+- Not regenerated if they already exist (idempotent)
+- Primary and Replica share the same CA in cluster mode
+
+To verify certificate details:
+
+```bash
+# View server certificate
+docker exec postgres-ba-primary openssl x509 -in \
+  /var/lib/postgresql/ssl/server.crt -text -noout
+
+# Verify certificate against CA
+docker exec postgres-ba-primary openssl verify -CAfile \
+  /var/lib/postgresql/ssl/root.crt \
+  /var/lib/postgresql/ssl/server.crt
+```
 
 ## Performance Tuning
 
@@ -390,4 +467,6 @@ For issues and questions:
 - WAL archiving every 60 seconds
 - Automated restore from S3
 - Docker Compose stack
-- GitHub Actions CI/CD (:pray:)
+- GitHub Actions CI/CD
+- **SSL/TLS with self-signed certificates (10 years validity)**
+- **Shared CA for Primary/Replica validation**
