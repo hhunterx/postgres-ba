@@ -9,6 +9,7 @@ Este documento valida que a imagem `postgres-pgbackrest:latest` é um drop-in re
 ## Teste de Compatibilidade Realizado
 
 ### Configuração Original (postgres:18-alpine)
+
 ```yaml
 postgres:
   image: postgres:18-alpine
@@ -29,6 +30,7 @@ postgres:
 ```
 
 ### Configuração Atualizada (postgres-pgbackrest:latest)
+
 ```yaml
 postgres:
   build:
@@ -60,24 +62,29 @@ postgres:
 ## Testes Realizados
 
 ### ✅ 1. Inicialização
+
 - [x] Container inicia sem erros
 - [x] PostgreSQL 18 se inicia corretamente
 - [x] Banco de dados é criado automaticamente
 - [x] Usuário é criado com permissões corretas
 
 ### ✅ 2. Autenticação
+
 - [x] Usuário `solution_user` pode autenticar
 - [x] Senha `solution_password` funciona
 - [x] Database `solution_db` é acessível
 
 ### ✅ 3. Health Check
+
 ```bash
 $ pg_isready -U solution_user -d solution_db
 accepting connections
 ```
+
 ✅ Status: **accepting connections** (Healthy)
 
 ### ✅ 4. Queries SQL
+
 ```sql
 CREATE TABLE test_compat (id SERIAL PRIMARY KEY, value TEXT);
 INSERT INTO test_compat (value) VALUES ('Works!');
@@ -85,20 +92,24 @@ SELECT * FROM test_compat;
 -- Output: id=1, value='Works!'
 DROP TABLE test_compat;
 ```
+
 ✅ Todas as queries executadas com sucesso
 
 ### ✅ 5. Volumes
+
 - [x] `/var/lib/postgresql/data` - Funciona
 - [x] `/docker-entrypoint-initdb.d/` - Scripts executam
 - [x] `/var/lib/postgresql/ca` - SSL CA (novo, não impede uso)
 - [x] `/var/lib/postgresql/ssl` - SSL certs (novo, não impede uso)
 
 ### ✅ 6. Entrypoint
+
 - [x] Entrypoint compatível com `docker-entrypoint.sh` oficial
 - [x] Todos os scripts de inicialização rodam
 - [x] Sem erros ou avisos críticos
 
 ### ✅ 7. SSL/TLS Bonus
+
 - [x] Certificados auto-assinados gerados
 - [x] SSL ativado automaticamente
 - [x] Conexões criptografadas funcionando
@@ -107,33 +118,36 @@ DROP TABLE test_compat;
 
 ## Comparação: postgres:18-alpine vs postgres-pgbackrest:latest
 
-| Aspecto | postgres:18-alpine | postgres-pgbackrest | Status |
-|---------|-------------------|-------------------|--------|
-| Base Image | Alpine Linux | Alpine Linux | ✅ Identical |
-| PostgreSQL Version | 18.1 | 18.1 | ✅ Identical |
-| Environment Variables | Suportadas | Suportadas | ✅ Identical |
-| Health Check | pg_isready | pg_isready | ✅ Identical |
-| Volumes | Suportados | Suportados + SSL | ✅ Compatible |
-| Init Scripts | /docker-entrypoint-initdb.d/ | /docker-entrypoint-initdb.d/ | ✅ Identical |
-| Entrypoint | docker-entrypoint.sh | entrypoint-compat.sh | ✅ Compatible |
-| Port Binding | 5432 | 5432 | ✅ Identical |
-| **Extras** | - | SSL + pgBackRest (opt) | ✅ Added Features |
+| Aspecto               | postgres:18-alpine           | postgres-pgbackrest          | Status            |
+| --------------------- | ---------------------------- | ---------------------------- | ----------------- |
+| Base Image            | Alpine Linux                 | Alpine Linux                 | ✅ Identical      |
+| PostgreSQL Version    | 18.1                         | 18.1                         | ✅ Identical      |
+| Environment Variables | Suportadas                   | Suportadas                   | ✅ Identical      |
+| Health Check          | pg_isready                   | pg_isready                   | ✅ Identical      |
+| Volumes               | Suportados                   | Suportados + SSL             | ✅ Compatible     |
+| Init Scripts          | /docker-entrypoint-initdb.d/ | /docker-entrypoint-initdb.d/ | ✅ Identical      |
+| Entrypoint            | docker-entrypoint.sh         | entrypoint-compat.sh         | ✅ Compatible     |
+| Port Binding          | 5432                         | 5432                         | ✅ Identical      |
+| **Extras**            | -                            | SSL + pgBackRest (opt)       | ✅ Added Features |
 
 ---
 
 ## Features Adicionais (Gratuitos)
 
 ### 1. SSL/TLS Automático
+
 - Certificados auto-assinados gerados na primeira inicialização
 - Válidos por 10 anos
 - Armazenados em volumes persistentes
 
 ### 2. pgBackRest (Opcional)
+
 - Disponível mas NÃO obrigatório
 - Apenas ativado se `PGBACKREST_STANZA` estiver configurado
 - Não interfere no modo compatível
 
 ### 3. Recursos adicionados
+
 - `openssl` para SSL
 - `pgbackrest` para backups (opcional)
 - `dcron` para agendamento (opcional)
@@ -155,7 +169,7 @@ DROP TABLE test_compat;
 ### Sem Breaking Changes
 
 - ✅ Variáveis de ambiente funcionam identicamente
-- ✅ Volumes funcionam identicamente  
+- ✅ Volumes funcionam identicamente
 - ✅ Health checks funcionam identicamente
 - ✅ Ports funcionam identicamente
 - ✅ Entrypoint é compatível
@@ -165,11 +179,13 @@ DROP TABLE test_compat;
 ## Recursos de Compatibilidade
 
 ### Modo Automático
+
 - Detecta se `PGBACKREST_STANZA` está configurado
 - Ativa/desativa pgBackRest automaticamente
 - SSL sempre ativado (não impede uso, apenas adiciona segurança)
 
 ### Uso via docker-compose.compat.yml
+
 ```bash
 # Usar compose compat explicitamente
 docker-compose -f docker-compose.compat.yml up -d
@@ -187,6 +203,7 @@ docker-compose -f docker-compose.compat.yml up -d
 Pode ser utilizada imediatamente em produção sem nenhuma alteração no código da aplicação.
 
 **Benefícios:**
+
 - ✅ Compatibilidade total
 - ✅ SSL gratuito e automático
 - ✅ pgBackRest disponível quando necessário

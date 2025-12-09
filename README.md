@@ -68,6 +68,7 @@ cp .env.example .env
 ### 3. Choose Your Setup
 
 **Option A: Drop-in Replacement (Compatibility Mode)**
+
 - No pgBackRest features
 - Pure PostgreSQL with SSL only
 - Use `docker-compose.compat.yml`
@@ -78,6 +79,7 @@ docker-compose -f docker-compose.compat.yml up -d
 ```
 
 **Option B: Full Featured (with pgBackRest & S3 Backups)**
+
 - Include pgBackRest for automated S3 backups
 - Requires S3 configuration in `.env`
 - Use regular `docker-compose.yml`
@@ -150,7 +152,7 @@ postgres:
 ✅ `/docker-entrypoint-initdb.d/` scripts supported  
 ✅ All standard environment variables work  
 ✅ Automatic database initialization  
-✅ Health checks work as expected  
+✅ Health checks work as expected
 
 ### Disabling Features
 
@@ -160,7 +162,7 @@ All features are **enabled by default** in compatibility mode. To disable them:
 environment:
   # Disable pgBackRest (already off if not set)
   # PGBACKREST_STANZA: ""
-  
+
   # Disable SSL (not recommended, but possible - requires code change)
   # Would require environment variable support
 ```
@@ -558,6 +560,7 @@ For issues and questions:
 This image is **100% compatible with postgres:18-alpine** and can be used as a drop-in replacement:
 
 ### Before (postgres:18-alpine)
+
 ```yaml
 postgres:
   image: postgres:18-alpine
@@ -567,6 +570,7 @@ postgres:
 ```
 
 ### After (postgres-pgbackrest:latest)
+
 ```yaml
 postgres:
   image: postgres-pgbackrest:latest
@@ -578,9 +582,10 @@ postgres:
 ```
 
 **Key Differences:**
+
 - ✅ 100% PostgreSQL API compatible
 - ✅ All environment variables work identically
-- ✅ All volumes work identically  
+- ✅ All volumes work identically
 - ✅ Same health check works
 - ✅ **Bonus: SSL/TLS encryption included by default**
 - 🎁 **Bonus: pgBackRest available (but optional)**
