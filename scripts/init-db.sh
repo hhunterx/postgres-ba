@@ -6,6 +6,9 @@ echo "Running post-initialization setup..."
 # Configure PostgreSQL for pgBackRest/SSL
 /usr/local/bin/configure-postgres.sh
 
+# Ensure postgres user exists for pgBackRest compatibility
+/usr/local/bin/ensure-postgres-user.sh
+
 # Only run pgBackRest operations if stanza is configured
 if [ "${PGBACKREST_STANZA}" != "" ]; then
     echo "Creating pgBackRest stanza..."

@@ -39,6 +39,8 @@ COPY scripts/setup-cron.sh /usr/local/bin/setup-cron.sh
 COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
 COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
+COPY scripts/ensure-postgres-user.sh /usr/local/bin/ensure-postgres-user.sh
+COPY scripts/pgbackrest-wrapper.sh /usr/local/bin/pgbackrest-wrapper.sh
 COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 
 # Make scripts executable
@@ -49,7 +51,13 @@ RUN chmod +x /usr/local/bin/pg-entrypoint.sh \
   /usr/local/bin/configure-postgres.sh \
   /usr/local/bin/configure-pgbackrest.sh \
   /usr/local/bin/configure-ssl-with-ca.sh \
+  /usr/local/bin/ensure-postgres-user.sh \
+  /usr/local/bin/pgbackrest-wrapper.sh \
   /docker-entrypoint-initdb.d/init-db.sh
+
+# Replace pgbackrest with wrapper to avoid environment variable warnings
+RUN mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
+    ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \

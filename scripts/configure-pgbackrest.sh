@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Clear environment variables that confuse pgBackRest
+unset s3-bucket s3-endpoint s3-region s3-access-key s3-secret-key s3-path 2>/dev/null || true
+
 # Set default PGDATA if not provided
 PGDATA=${PGDATA:-/var/lib/postgresql/data/pgdata}
 export PGDATA
@@ -22,10 +25,15 @@ repo1-retention-full=${RETENTION_FULL:-3}
 repo1-retention-diff=${RETENTION_DIFF:-14}
 repo1-retention-archive-type=full
 repo1-retention-archive=${RETENTION_ARCHIVE:-2}
-repo1-cipher-pass=x
-repo1-cipher-type=aes-256-cbc
-repo1-compress=gz
-repo1-compress-level=3
+# Disable encryption for compatibility with existing repos
+# repo1-cipher-pass=x
+# repo1-cipher-type=aes-256-cbc
+
+# Compression settings
+repo1-bundle=y
+repo1-bundle-size=20MB
+compress-type=gz
+compress-level=3
 
 process-max=${PGBACKREST_PROCESS_MAX:-2}
 log-level-console=info
@@ -39,6 +47,7 @@ archive-async=y
 pg1-path=${PGDATA}
 pg1-port=${PGPORT:-5432}
 pg1-socket-path=/var/run/postgresql
+pg1-user=${POSTGRES_USER:-postgres}
 EOF
 
 chmod 640 /etc/pgbackrest/pgbackrest.conf
