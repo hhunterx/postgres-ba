@@ -32,7 +32,6 @@ RUN mkdir -p /var/log/pgbackrest \
   && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest
 
 # Copy scripts
-COPY scripts/root-entrypoint.sh /usr/local/bin/root-entrypoint.sh
 COPY scripts/pg-entrypoint.sh /usr/local/bin/pg-entrypoint.sh
 COPY scripts/entrypoint-compat.sh /usr/local/bin/entrypoint-compat.sh
 COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
@@ -43,8 +42,7 @@ COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
 COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 
 # Make scripts executable
-RUN chmod +x /usr/local/bin/root-entrypoint.sh \
-  /usr/local/bin/pg-entrypoint.sh \
+RUN chmod +x /usr/local/bin/pg-entrypoint.sh \
   /usr/local/bin/entrypoint-compat.sh \
   /usr/local/bin/backup-cron.sh \
   /usr/local/bin/setup-cron.sh \

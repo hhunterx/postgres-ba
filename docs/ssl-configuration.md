@@ -27,7 +27,7 @@ PostgreSQL SSL foi adicionado para ativar conexões criptografadas entre cliente
      - Certificado do servidor: `server.crt` (assinado pela CA, 10 anos)
      - Cópia da CA: `root.crt` (para validação)
    - Define permissões corretas (600 para chaves, 644 para certificados)
-   - Executa apenas como root (via root-entrypoint.sh)
+   - Executa apenas como root (via entrypoint-compat.sh)
 
 2. **Configuração PostgreSQL** (`configure-postgres.sh`):
 

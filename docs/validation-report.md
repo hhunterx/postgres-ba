@@ -14,7 +14,7 @@ Toda a implementação de SSL com CA compartilhada foi validada e está funciona
 
 - [x] `scripts/configure-ssl-with-ca.sh` - Novo script para gerar CA e certificados
 - [x] `scripts/configure-postgres.sh` - Atualizado com configurações SSL
-- [x] `scripts/root-entrypoint.sh` - Atualizado para chamar `configure-ssl-with-ca.sh`
+- [x] `scripts/entrypoint-compat.sh` - Atualizado para chamar `configure-ssl-with-ca.sh`
 - [x] `scripts/pg-entrypoint.sh` - Verificado (funciona corretamente)
 - [x] `Dockerfile` - Atualizado com openssl e cópia do novo script
 - [x] `docker-compose.yml` - Volumes SSL e CA adicionados
@@ -179,7 +179,7 @@ postgres_cluster_replica_ssl (único replica) ✅
 
 ### ❌ Problema 2: Configure-ssl-with-ca.sh não estava sendo chamado
 
-**Solução:** Adicionado a chamada em `root-entrypoint.sh` (não em `entrypoint.sh`)
+**Solução:** Adicionado a chamada em `entrypoint-compat.sh` (não em `entrypoint.sh`)
 
 ### ℹ️ Nota: Duplicação em pg_hba.conf
 

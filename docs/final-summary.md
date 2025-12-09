@@ -46,7 +46,6 @@ postgres-ba/
 │
 ├── scripts/
 │   ├── entrypoint-compat.sh            (novo: wrapper compatível)
-│   ├── root-entrypoint.sh              (atualizado)
 │   ├── configure-ssl-with-ca.sh        (novo: SSL com CA)
 │   ├── configure-postgres.sh           (atualizado: condicional)
 │   ├── init-db.sh                      (atualizado: condicional)
