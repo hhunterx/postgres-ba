@@ -7,12 +7,12 @@ echo "Configuring pgBackRest..."
 cat > /etc/pgbackrest/pgbackrest.conf <<EOF
 [global]
 repo1-type=s3
-repo1-s3-bucket=${S3_BUCKET}
-repo1-s3-endpoint=${S3_ENDPOINT:-s3.amazonaws.com}
-repo1-s3-region=${S3_REGION:-us-east-1}
-repo1-s3-key=${S3_ACCESS_KEY}
-repo1-s3-key-secret=${S3_SECRET_KEY}
-repo1-path=${S3_PATH:-/pgbackrest}
+repo1-s3-bucket=${PGBACKREST_S3_BUCKET}
+repo1-s3-endpoint=${PGBACKREST_S3_ENDPOINT:-s3.amazonaws.com}
+repo1-s3-region=${PGBACKREST_S3_REGION:-us-east-1}
+repo1-s3-key=${PGBACKREST_S3_ACCESS_KEY}
+repo1-s3-key-secret=${PGBACKREST_S3_SECRET_KEY}
+repo1-path=${PGBACKREST_S3_PATH:-/pgbackrest}
 repo1-retention-full=${RETENTION_FULL:-3}
 repo1-retention-diff=${RETENTION_DIFF:-14}
 repo1-retention-archive-type=full
