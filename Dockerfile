@@ -57,7 +57,7 @@ RUN chmod +x /usr/local/bin/pg-entrypoint.sh \
 
 # Replace pgbackrest with wrapper to avoid environment variable warnings
 RUN mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
-    ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest
+  ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
