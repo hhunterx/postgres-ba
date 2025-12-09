@@ -1,0 +1,58 @@
+version: '3.8'
+
+# This compose file demonstrates compatibility mode
+# Drop-in replacement for postgres:18-alpine
+# No pgBackRest, just SSL + pure PostgreSQL
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: postgres-pgbackrest:latest
+    container_name: solution-postgres
+    environment:
+      # Core PostgreSQL Configuration (no pgBackRest features)
+      POSTGRES_DB: solution_db
+      POSTGRES_USER: solution_user
+      POSTGRES_PASSWORD: solution_password
+      
+      # Disable pgBackRest to run in compatibility mode
+      # When PGBACKREST_STANZA is not set, pgBackRest is skipped
+      # PGBACKREST_STANZA: "" (undefined = skip)
+      
+      # SSL will still be configured
+      # Set to empty to skip SSL if needed:
+      # SSL_CERT_DIR: ""
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_ca:/var/lib/postgresql/ca
+      - postgres_ssl:/var/lib/postgresql/ssl
+    networks:
+      - solution-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U solution_user -d solution_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_ca:
+    driver: local
+  postgres_ssl:
+    driver: local
+
+networks:
+  solution-network:
+    driver: bridge

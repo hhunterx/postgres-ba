@@ -34,6 +34,7 @@ RUN mkdir -p /var/log/pgbackrest \
 # Copy scripts
 COPY scripts/root-entrypoint.sh /usr/local/bin/root-entrypoint.sh
 COPY scripts/pg-entrypoint.sh /usr/local/bin/pg-entrypoint.sh
+COPY scripts/entrypoint-compat.sh /usr/local/bin/entrypoint-compat.sh
 COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
 COPY scripts/setup-cron.sh /usr/local/bin/setup-cron.sh
 COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
@@ -44,6 +45,7 @@ COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 # Make scripts executable
 RUN chmod +x /usr/local/bin/root-entrypoint.sh \
   /usr/local/bin/pg-entrypoint.sh \
+  /usr/local/bin/entrypoint-compat.sh \
   /usr/local/bin/backup-cron.sh \
   /usr/local/bin/setup-cron.sh \
   /usr/local/bin/configure-postgres.sh \
@@ -55,6 +57,7 @@ RUN chmod +x /usr/local/bin/root-entrypoint.sh \
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
   CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
 
-# Set entrypoint
-ENTRYPOINT ["/usr/local/bin/root-entrypoint.sh"]
+# Set entrypoint - Compatible with official postgres:18-alpine
+# This wrapper handles pgBackRest and SSL setup, then calls docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint-compat.sh"]
 CMD ["postgres"]
