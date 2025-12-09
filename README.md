@@ -390,4 +390,4 @@ For issues and questions:
 - WAL archiving every 60 seconds
 - Automated restore from S3
 - Docker Compose stack
-- GitHub Actions CI/CD
+- GitHub Actions CI/CD (:pray:)
