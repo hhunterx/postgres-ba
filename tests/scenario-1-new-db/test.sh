@@ -102,8 +102,6 @@ if docker compose exec -T -u postgres postgres pgbackrest --stanza=test-scenario
     echo "✅ PASS: Stanza 'test-scenario1' exists"
 else
     echo "❌ FAIL: Stanza not found"
-    echo "Checking init log..."
-    docker compose exec -T postgres cat /var/log/pgbackrest-init.log 2>/dev/null || true
     exit 1
 fi
 

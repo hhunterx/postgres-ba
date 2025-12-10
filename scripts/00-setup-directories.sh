@@ -31,17 +31,13 @@ if [ -n "${PGBACKREST_STANZA}" ]; then
         /etc/pgbackrest \
         /etc/pgbackrest/conf.d \
         /tmp/pgbackrest
-    
-    # Create log file with correct permissions
-    touch /var/log/pgbackrest-init.log
-    
+
     chown -R postgres:postgres \
         /var/log/pgbackrest \
         /var/lib/pgbackrest \
         /var/spool/pgbackrest \
         /etc/pgbackrest \
-        /tmp/pgbackrest \
-        /var/log/pgbackrest-init.log 2>/dev/null || true
+        /tmp/pgbackrest 2>/dev/null || true
 fi
 
 # Create SSL directory

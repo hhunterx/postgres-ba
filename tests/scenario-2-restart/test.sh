@@ -115,9 +115,9 @@ echo ""
 echo "Test 2: Check SSL still enabled..."
 SSL_STATUS=$(docker compose exec -T postgres psql -U postgres -tAc "SHOW ssl")
 if [ "$SSL_STATUS" = "on" ]; then
-    echo "✅ PASS: SSL is still enabled"
+    echo "✅ PASS: SSL is enabled"
 else
-    echo "❌ FAIL: SSL is not enabled after restart"
+    echo "❌ FAIL: SSL is not enabled after restart (status: $SSL_STATUS)"
     exit 1
 fi
 
@@ -126,40 +126,56 @@ echo ""
 echo "Test 3: Check archive_mode still on..."
 ARCHIVE_MODE=$(docker compose exec -T postgres psql -U postgres -tAc "SHOW archive_mode")
 if [ "$ARCHIVE_MODE" = "on" ]; then
-    echo "✅ PASS: archive_mode is still on"
+    echo "✅ PASS: archive_mode is on"
 else
-    echo "❌ FAIL: archive_mode is not on after restart"
+    echo "❌ FAIL: archive_mode is not on after restart (status: $ARCHIVE_MODE)"
     exit 1
 fi
 
-# Test 4: Check stanza still exists
+# Test 4: Check archive_command still uses pgbackrest
 echo ""
-echo "Test 4: Check stanza still exists..."
-if docker compose exec -T postgres su-exec postgres pgbackrest --stanza=test-scenario2 info > /dev/null 2>&1; then
-    echo "✅ PASS: Stanza still exists"
+echo "Test 4: Check archive_command..."
+ARCHIVE_CMD=$(docker compose exec -T postgres psql -U postgres -tAc "SHOW archive_command")
+if [[ "$ARCHIVE_CMD" == *"pgbackrest"* ]]; then
+    echo "✅ PASS: archive_command uses pgbackrest"
+else
+    echo "❌ FAIL: archive_command does not use pgbackrest"
+    echo "   Got: $ARCHIVE_CMD"
+    exit 1
+fi
+
+# Test 5: Check stanza still exists
+echo ""
+echo "Test 5: Check pgBackRest stanza still exists..."
+if docker compose exec -T -u postgres postgres pgbackrest --stanza=test-scenario2 info > /dev/null 2>&1; then
+    echo "✅ PASS: Stanza 'test-scenario2' exists"
 else
     echo "❌ FAIL: Stanza not found after restart"
     exit 1
 fi
 
-# Test 5: Check cron is running
+# Test 6: Check backup still exists
 echo ""
-echo "Test 5: Check cron restarted..."
-if docker compose exec -T postgres pgrep crond > /dev/null 2>&1; then
-    echo "✅ PASS: crond is running after restart"
+echo "Test 6: Check backup still exists..."
+BACKUP_INFO=$(docker compose exec -T -u postgres postgres pgbackrest --stanza=test-scenario2 info --output=json 2>/dev/null)
+if echo "$BACKUP_INFO" | grep -q '"backup"'; then
+    echo "✅ PASS: Backup exists"
+    echo ""
+    echo "Backup info:"
+    docker compose exec -T -u postgres postgres pgbackrest --stanza=test-scenario2 info
 else
-    echo "❌ FAIL: crond is not running after restart"
+    echo "❌ FAIL: No backup found"
     exit 1
 fi
 
-# Test 6: Stanza not duplicated (idempotent)
+# Test 7: Check cron is running
 echo ""
-echo "Test 6: Check init-db.sh is idempotent..."
-LOG_CONTENT=$(docker compose exec -T postgres cat /var/log/pgbackrest-init.log 2>/dev/null || echo "")
-if echo "$LOG_CONTENT" | grep -q "already exists"; then
-    echo "✅ PASS: init-db.sh detected existing stanza (idempotent)"
+echo "Test 7: Check cron restarted..."
+if docker compose exec -T postgres pgrep crond > /dev/null 2>&1; then
+    echo "✅ PASS: crond is running"
 else
-    echo "⚠️  WARN: Could not verify idempotency from logs"
+    echo "❌ FAIL: crond is not running after restart"
+    exit 1
 fi
 
 echo ""

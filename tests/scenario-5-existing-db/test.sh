@@ -150,8 +150,6 @@ if docker compose exec -T postgres-ba su-exec postgres pgbackrest --stanza=test-
     echo "✅ PASS: Stanza was created"
 else
     echo "❌ FAIL: Stanza was not created"
-    echo "Checking init log..."
-    docker compose exec -T postgres-ba cat /var/log/pgbackrest-init.log 2>/dev/null || true
     exit 1
 fi
 

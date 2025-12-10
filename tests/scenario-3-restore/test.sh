@@ -76,7 +76,6 @@ echo ""
 echo "Step 7: Creating backup with test data..."
 docker compose exec -T postgres su-exec postgres pgbackrest --stanza=test-scenario3 --type=full backup || {
     echo "Backup failed, checking logs..."
-    docker compose exec -T postgres cat /var/log/pgbackrest-init.log 2>/dev/null || true
     exit 1
 }
 echo "Backup completed."
