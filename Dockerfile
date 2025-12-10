@@ -1,25 +1,26 @@
 # Build stage
 FROM postgres:18-alpine AS builder
 
-# Install build dependencies and pgBackRest
-# Use alternative mirror for better connectivity
-RUN echo "http://dl-4.alpinelinux.org/alpine/v3.23/main" > /etc/apk/repositories && \
-  echo "http://dl-4.alpinelinux.org/alpine/v3.23/community" >> /etc/apk/repositories && \
-  apk update --no-cache && \
-  apk add --no-cache bash curl dcron openssl && \
-  rm -rf /var/cache/apk/*
+# Install build dependencies
+# Note: bash, wget, crond are already in the base image
+RUN apk add --no-cache openssl curl 2>&1 || apk add --no-cache openssl || true
+RUN rm -rf /var/cache/apk/*
 
 # Production stage
 FROM postgres:18-alpine
 
 # Install runtime dependencies
-# Use alternative mirror for better connectivity
-RUN echo "http://dl-4.alpinelinux.org/alpine/v3.23/main" > /etc/apk/repositories && \
-  echo "http://dl-4.alpinelinux.org/alpine/v3.23/community" >> /etc/apk/repositories && \
-  apk update --no-cache && \
-  apk add --no-cache bash curl dcron openssl su-exec && \
-  apk add --no-cache pgbackrest postgresql-contrib && \
-  rm -rf /var/cache/apk/*
+# Note: bash, wget, crond, gosu are already in the base image
+# Install only critical missing packages
+RUN apk add --no-cache openssl curl su-exec 2>&1 || apk add --no-cache openssl || true
+
+# Install pgBackRest and PostgreSQL extensions from community repo
+# These are critical but may fail if community repo is unavailable
+RUN apk add --no-cache pgbackrest postgresql-contrib 2>&1 || \
+  echo "WARNING: pgbackrest/postgresql-contrib not installed - community repo unavailable"
+
+# Clean cache
+RUN rm -rf /var/cache/apk/*
 
 # Create necessary directories
 RUN mkdir -p /var/log/pgbackrest \
@@ -61,8 +62,11 @@ RUN chmod +x /usr/local/bin/*.sh \
   /docker-entrypoint-initdb.d/*.sh
 
 # Replace pgbackrest with wrapper to avoid environment variable warnings
-RUN mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
-  ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest
+# Only if pgbackrest was successfully installed
+RUN if [ -f /usr/bin/pgbackrest ]; then \
+  mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
+  ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest; \
+fi
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \

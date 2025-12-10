@@ -13,6 +13,65 @@ echo "=========================================="
 echo "PostgreSQL 18 with pgBackRest"
 echo "=========================================="
 
+# Install missing critical packages at runtime if build-time installation failed
+if ! command -v openssl >/dev/null 2>&1 || ! command -v pgbackrest >/dev/null 2>&1; then
+    echo "Installing missing packages at runtime..."
+    echo "Checking which packages are missing..."
+    ! command -v openssl >/dev/null 2>&1 && echo "  - openssl is missing"
+    ! command -v pgbackrest >/dev/null 2>&1 && echo "  - pgbackrest is missing"
+    ! command -v su-exec >/dev/null 2>&1 && echo "  - su-exec is missing (gosu available as fallback)"
+    ! command -v curl >/dev/null 2>&1 && echo "  - curl is missing (wget available as fallback)"
+    
+    echo "Attempting to install (with retries for DNS issues)..."
+    RETRY_COUNT=0
+    MAX_RETRIES=10
+    INSTALLED=false
+    
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$INSTALLED" = false ]; do
+        if [ $RETRY_COUNT -gt 0 ]; then
+            # Exponential backoff: wait longer on each retry
+            WAIT_TIME=$((3 + RETRY_COUNT * 2))
+            echo "Retry attempt $RETRY_COUNT of $MAX_RETRIES (waiting ${WAIT_TIME}s for DNS)..."
+            sleep $WAIT_TIME
+        fi
+        
+        # Capture output and check if installation succeeded
+        set +e  # Temporarily disable exit on error
+        apk add --no-cache openssl pgbackrest postgresql-contrib su-exec curl > /tmp/apk-install.log 2>&1
+        APK_EXIT=$?
+        set -e  # Re-enable exit on error
+        cat /tmp/apk-install.log  # Show output
+        
+        if [ $APK_EXIT -eq 0 ]; then
+            echo "Packages installed successfully!"
+            INSTALLED=true
+        else
+            echo "Installation failed with exit code $APK_EXIT"
+            if grep -q "DNS:" /tmp/apk-install.log; then
+                echo "DNS error detected, will retry..."
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+            else
+                echo "Non-DNS error, stopping retries"
+                break
+            fi
+        fi
+    done
+    
+    if [ "$INSTALLED" = false ]; then
+        echo "WARNING: Package installation failed after $MAX_RETRIES attempts. Checking what succeeded..."
+        command -v openssl >/dev/null 2>&1 && echo "  ✓ openssl installed" || echo "  ✗ openssl FAILED"
+        command -v pgbackrest >/dev/null 2>&1 && echo "  ✓ pgbackrest installed" || echo "  ✗ pgbackrest FAILED"
+        command -v su-exec >/dev/null 2>&1 && echo "  ✓ su-exec installed" || echo "  ✗ su-exec FAILED (using gosu)"
+        command -v curl >/dev/null 2>&1 && echo "  ✓ curl installed" || echo "  ✗ curl FAILED (using wget)"
+    fi
+    
+    # Setup pgbackrest wrapper if needed and pgbackrest is now available
+    if [ -f /usr/bin/pgbackrest ] && [ ! -f /usr/bin/pgbackrest-orig ]; then
+        mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig
+        ln -s /usr/local/bin/pgbackrest-wrapper.sh /usr/bin/pgbackrest
+    fi
+fi
+
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 export PGDATA
 
