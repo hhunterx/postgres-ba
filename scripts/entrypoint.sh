@@ -46,7 +46,7 @@ if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-restore-from-backup.s
 fi
 
 # 4. Setup replica (only if DB doesn't exist)
-# TODO: Ensure post-init postgres configuration are valid for replicas
+# Replica configuration is handled by configure-postgres.sh after pg_basebackup
 if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/03-setup-replica.sh ]; then
     source /usr/local/bin/03-setup-replica.sh
 fi
@@ -57,8 +57,10 @@ if [ -f /usr/local/bin/04-configure-ssl.sh ]; then
     source /usr/local/bin/04-configure-ssl.sh
 fi
 
-# # 6. Configure PostgreSQL for existing DBs only
-# (For new DBs, this will run via /docker-entrypoint-initdb.d/)
+# 6. Configure PostgreSQL for existing DBs only
+# (For new DBs, this will run via /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh)
+# configure-postgres.sh handles ALL cases: primary, replica, restored, new DB
+# It builds postgresql.auto.conf incrementally based on mode and environment variables
 if [ "$DB_INITIALIZED" = true ] && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
     source /usr/local/bin/10-configure-postgres-initdb.sh
 fi

@@ -73,15 +73,18 @@ PGPASSWORD="${POSTGRES_PASSWORD}" pg_basebackup \
     -R \
     -v
 
-echo "Configuring replica settings..."
-cat >> "${PGDATA}/postgresql.conf" <<EOF
+echo "pg_basebackup completed successfully!"
 
-# Replica Configuration
-primary_slot_name = '${SLOT_NAME}'
-hot_standby = on
-EOF
+# IMPORTANT: pg_basebackup with -R flag creates:
+# - standby.signal file (marks this as a replica)
+# - postgresql.auto.conf with primary_conninfo and primary_slot_name
+# - BUT it also copies the primary's full postgresql.auto.conf (including archive_command)
+#
+# The configure-postgres.sh script (called next) will REBUILD postgresql.auto.conf
+# to ensure it has the correct settings for this replica.
 
 echo "Replica setup completed successfully!"
+echo "Note: PostgreSQL configuration will be applied by configure-postgres.sh"
 
 # Signal that we've setup replica and should skip normal init
 export POSTGRES_HOST_AUTH_METHOD=trust
