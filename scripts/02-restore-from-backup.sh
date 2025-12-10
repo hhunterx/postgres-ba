@@ -59,6 +59,3 @@ echo "Restoring from latest backup..."
 run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --delta --log-level-console=info restore
 
 echo "Restore completed successfully!"
-
-# Signal that we've restored and should skip normal init
-export DB_INITIALIZED=true

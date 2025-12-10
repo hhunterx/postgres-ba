@@ -48,7 +48,6 @@ entrypoint.sh
     │   ├─ Valida que PG_MODE ≠ replica (conflito)
     │   ├─ Verifica existência de backup com pgbackrest info
     │   ├─ Executa: pgbackrest --stanza=X --delta restore
-    │   └─ Define DB_INITIALIZED=true
     │
     ├─► 03-setup-replica.sh
     │   ├─ Verifica PG_MODE=replica
@@ -305,7 +304,6 @@ docker-entrypoint.sh (oficial)
 3. `02-restore-from-backup.sh` → **EXECUTA RESTORE**
    - Valida backup existe (pgbackrest info)
    - Executa pgbackrest restore
-   - Define DB_INITIALIZED=true
 4. `03-setup-replica.sh` → pula (PG_MODE ≠ replica)
 5. `04-configure-ssl.sh` → gera/valida certificados
 6. `09-configure-cron.sh` → configura cron
