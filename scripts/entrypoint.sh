@@ -45,21 +45,20 @@ if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-setup-replica.sh ]; t
     source /usr/local/bin/02-setup-replica.sh
 fi
 
-# 4. Configure SSL (always run, even for existing databases)
+# 4. Configure SSL (always run, both new and existing databases)
 if [ -f /usr/local/bin/10-configure-ssl.sh ]; then
     echo "Configuring SSL certificates..."
     source /usr/local/bin/10-configure-ssl.sh
 fi
 
-# 5. Configure PostgreSQL and pgBackRest (always run for existing databases)
-if [ "$DB_INITIALIZED" = true ] && [ -f /usr/local/bin/20-configure-pgbackrest-postgres.sh ]; then
-    echo "Applying configuration to existing database..."
+# 5. Configure PostgreSQL and pgBackRest (always run, both new and existing databases)
+if [ -f /usr/local/bin/20-configure-pgbackrest-postgres.sh ]; then
     source /usr/local/bin/20-configure-pgbackrest-postgres.sh
 fi
 
-# 6. Post-initialization tasks (always run if pgBackRest is enabled)
-if [ "$DB_INITIALIZED" = true ] && [ -n "${PGBACKREST_STANZA}" ] && [ -f /usr/local/bin/99-post-init.sh ]; then
-    echo "Running post-initialization tasks..."
+# 6. Post-initialization tasks (always run if pgBackRest enabled)
+# Sets up cron and schedules init-db.sh (idempotent)
+if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/99-post-init.sh ]; then
     source /usr/local/bin/99-post-init.sh
 fi
 
