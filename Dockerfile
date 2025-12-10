@@ -67,7 +67,7 @@ RUN mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-  CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
+  CMD pg_isready -U postgres || exit 1
 
 # Set entrypoint - Compatible with official postgres:18-alpine
 # This entrypoint runs pre-init scripts, then delegates to docker-entrypoint.sh
