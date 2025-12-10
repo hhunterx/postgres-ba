@@ -2,12 +2,8 @@
 set -e
 
 # pgBackRest initialization script
-# 
-# Use cases:
-# 1. Initialize pgBackRest for a NEW database (called by 11-init-db.sh)
-# 2. Initialize pgBackRest for an EXISTING database (called by manually by user.sh)
-# 3. Manual initialization after migration/restore
-#
+# Initialize pgBackRest for a NEW/EXISTING database (called by the entrypoint)
+# Runs AFTER database initialization (15s after entrypoint starts)
 # This script is IDEMPOTENT - safe to run multiple times
 # If stanza already exists, it will just report that and exit successfully
 
@@ -22,7 +18,7 @@ run_as_postgres() {
 }
 
 echo "=========================================="
-echo "pgBackRest Initialization"
+echo "pgBackRest STANZA CHECK"
 echo "=========================================="
 
 # Check if pgBackRest is configured
@@ -37,7 +33,7 @@ echo ""
 
 # Check if PostgreSQL is running
 echo "Checking PostgreSQL status..."
-if ! pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" > /dev/null 2>&1; then
+if ! pg_isready -U postgres -d postgres > /dev/null 2>&1; then
     echo "ERROR: PostgreSQL is not running or not ready."
     echo "PostgreSQL must be running to create pgBackRest stanza."
     exit 1
@@ -47,8 +43,8 @@ echo ""
 
 # Check if WAL archiving is configured
 echo "Checking WAL archiving configuration..."
-ARCHIVE_MODE=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres} -tAc 'SHOW archive_mode')
-ARCHIVE_COMMAND=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres} -tAc 'SHOW archive_command')
+ARCHIVE_MODE=$(run_as_postgres psql -U postgres -d postgres -tAc 'SHOW archive_mode')
+ARCHIVE_COMMAND=$(run_as_postgres psql -U postgres -d postgres -tAc 'SHOW archive_command')
 
 if [ "$ARCHIVE_MODE" != "on" ]; then
     echo "WARNING: archive_mode is not 'on' (current: $ARCHIVE_MODE)"
@@ -116,8 +112,8 @@ echo "✓ Stanza created successfully!"
 echo ""
 
 # Perform initial backup (always automatic, no prompting)
-echo "Performing initial full backup..."
-echo "This may take several minutes depending on database size..."
+echo "FIRST RUN: PERFORMING INITIAL FULL BACKUP OF THE CLUSTER..."
+echo "ATENTION: THIS MAY TAKE SOME TIME DEPENDING ON DATABASE SIZE."
 echo ""
 
 if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup; then
@@ -134,10 +130,6 @@ else
 fi
 
 echo ""
-echo "=========================================="
-echo "Initialization complete!"
-echo "=========================================="
-echo ""
-echo "Stanza '${PGBACKREST_STANZA}' is ready to use."
-echo "Automated backups will run according to cron schedule."
+echo "======= Stanza '${PGBACKREST_STANZA}' is ready to use. ======="
+echo "======= Automated backups will run according to cron schedule. ======="
 echo ""
