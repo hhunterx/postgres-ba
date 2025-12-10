@@ -2,7 +2,7 @@
 set -e
 
 # Setup directories and permissions
-# This runs BEFORE database initialization
+# This runs BEFORE database initialization on every container start once (always)
 
 echo "Setting up directories and permissions..."
 

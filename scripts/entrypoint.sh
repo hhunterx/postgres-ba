@@ -5,7 +5,7 @@ set -e
 # Compatible with postgres:18-alpine official image
 # 
 # This entrypoint:
-# 1. Runs pre-initialization scripts (setup, restore, replica)
+# 1. Runs pre-initialization scripts (setup permissions, restore, replica, ssl, pgBackRest config)
 # 2. Delegates to official docker-entrypoint.sh for database init
 # 3. Post-initialization tasks run via /docker-entrypoint-initdb.d/
 
@@ -35,31 +35,39 @@ if [ -s "$PGDATA/PG_VERSION" ]; then
     echo "Database already initialized at ${PGDATA}"
 fi
 
-# 2. Handle backup restore (only if DB doesn't exist)
-if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/01-restore-from-backup.sh ]; then
-    source /usr/local/bin/01-restore-from-backup.sh
+# 2. Configure pgBackRest (always run, both new and existing databases)
+if [ -f /usr/local/bin/01-configure-pgbackrest.sh ]; then
+    source /usr/local/bin/01-configure-pgbackrest.sh
 fi
 
-# 3. Setup replica (only if DB doesn't exist)
-if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-setup-replica.sh ]; then
-    source /usr/local/bin/02-setup-replica.sh
+# 3. Handle backup restore (only if DB doesn't exist)
+if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-restore-from-backup.sh ]; then
+    source /usr/local/bin/02-restore-from-backup.sh
 fi
 
-# 4. Configure SSL (always run, both new and existing databases)
+# 4. Setup replica (only if DB doesn't exist)
+# TODO: Ensure this works correctly with restore mode
+# TODO: Ensure post-init postgres configuration are valid for replicas
+if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/03-setup-replica.sh ]; then
+    source /usr/local/bin/03-setup-replica.sh
+fi
+
+# 5. Configure SSL (always run, both new and existing databases)
 if [ -f /usr/local/bin/10-configure-ssl.sh ]; then
     echo "Configuring SSL certificates..."
     source /usr/local/bin/10-configure-ssl.sh
 fi
 
-# 5. Configure PostgreSQL and pgBackRest (always run, both new and existing databases)
-if [ -f /usr/local/bin/20-configure-pgbackrest-postgres.sh ]; then
-    source /usr/local/bin/20-configure-pgbackrest-postgres.sh
+# # 6. Configure PostgreSQL for existing DBs only
+# (For new DBs, this will run via /docker-entrypoint-initdb.d/)
+if [ "$DB_INITIALIZED" = true ] && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
+    source /usr/local/bin/10-configure-postgres-initdb.sh
 fi
 
-# 6. Post-initialization tasks (always run if pgBackRest enabled)
+# 7. Post-initialization tasks (always run if pgBackRest enabled)
 # Sets up cron and schedules init-db.sh (idempotent)
-if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/99-post-init.sh ]; then
-    source /usr/local/bin/99-post-init.sh
+if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/09-configure-cron.sh ]; then
+    source /usr/local/bin/09-configure-cron.sh
 fi
 
 # ============================================

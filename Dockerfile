@@ -41,19 +41,18 @@ COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
 COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
 COPY scripts/pgbackrest-wrapper.sh /usr/local/bin/pgbackrest-wrapper.sh
-COPY scripts/init-db.sh /usr/local/bin/init-db.sh
 
 # Copy pre-initialization scripts (run before docker-entrypoint.sh)
 COPY scripts/00-setup-directories.sh /usr/local/bin/00-setup-directories.sh
-COPY scripts/01-restore-from-backup.sh /usr/local/bin/01-restore-from-backup.sh
-COPY scripts/02-setup-replica.sh /usr/local/bin/02-setup-replica.sh
-COPY scripts/10-configure-ssl.sh /usr/local/bin/10-configure-ssl.sh
-COPY scripts/20-configure-pgbackrest-postgres.sh /usr/local/bin/20-configure-pgbackrest-postgres.sh
-COPY scripts/99-post-init.sh /usr/local/bin/99-post-init.sh
+COPY scripts/01-configure-pgbackrest.sh /usr/local/bin/01-configure-pgbackrest.sh
+COPY scripts/02-restore-from-backup.sh /usr/local/bin/02-restore-from-backup.sh
+COPY scripts/03-setup-replica.sh /usr/local/bin/03-setup-replica.sh
+COPY scripts/04-configure-ssl.sh /usr/local/bin/04-configure-ssl.sh
+COPY scripts/09-configure-cron.sh /usr/local/bin/09-configure-cron.sh
 
 # Copy initialization scripts (run by docker-entrypoint.sh)
-COPY scripts/20-configure-postgres-initdb.sh /docker-entrypoint-initdb.d/20-configure-postgres-initdb.sh
-COPY scripts/30-init-db.sh /docker-entrypoint-initdb.d/30-init-db.sh
+COPY scripts/10-configure-postgres-initdb.sh /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh
+COPY scripts/11-init-db.sh /docker-entrypoint-initdb.d/11-init-db.sh
 
 # Copy main entrypoint
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
