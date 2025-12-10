@@ -1,8 +1,24 @@
 services:
+  minio-certs:
+    image: alpine/openssl:latest
+    container_name: scenario4-minio-certs
+    volumes:
+      - minio-certs:/certs
+    entrypoint: >
+      /bin/sh -c "
+      if [ ! -f /certs/private.key ]; then
+        openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 
+          -subj '/C=US/ST=State/L=City/O=Organization/CN=minio' 
+          -keyout /certs/private.key 
+          -out /certs/public.crt;
+        chmod 644 /certs/private.key /certs/public.crt;
+      fi
+      "
+
   minio:
     image: minio/minio:latest
     container_name: scenario4-minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" --certs-dir /root/.minio/certs
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -11,8 +27,12 @@ services:
       - "9401:9001"
     volumes:
       - minio-data:/data
+      - minio-certs:/root/.minio/certs
+    depends_on:
+      minio-certs:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "mc", "ready", "local", "--insecure"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,7 +45,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc alias set myminio https://minio:9000 minioadmin minioadmin --insecure;
       mc mb myminio/pgbackrest --ignore-existing;
       exit 0;
       "
@@ -83,6 +103,7 @@ services:
       - replica
 
 volumes:
+  minio-certs:
   minio-data:
   primary-data:
   primary-ssl:
