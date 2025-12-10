@@ -14,8 +14,8 @@ FROM postgres:18-alpine
 # Install runtime dependencies
 # Combined installation with fallback for QEMU emulation issues
 RUN apk update && \
-  (apk add --no-cache bash curl dcron openssl || \
-  (apk add --no-cache bash curl openssl && apk add --no-cache dcron || true)) && \
+  (apk add --no-cache bash curl dcron openssl su-exec || \
+  (apk add --no-cache bash curl openssl su-exec && apk add --no-cache dcron || true)) && \
   rm -rf /var/cache/apk/*
 
 # Install pgBackRest and PostgreSQL extensions

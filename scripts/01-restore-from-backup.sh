@@ -7,6 +7,16 @@ set -e
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
+# Helper function to run commands as postgres user
+# If already running as postgres, run directly; otherwise use su-exec
+run_as_postgres() {
+    if [ "$(id -u)" = "0" ]; then
+        su-exec postgres "$@"
+    else
+        "$@"
+    fi
+}
+
 # Only restore if explicitly requested and database doesn't exist
 if [ "${RESTORE_FROM_BACKUP}" != "true" ]; then
     echo "RESTORE_FROM_BACKUP not enabled, skipping restore."
@@ -33,7 +43,7 @@ echo "Configuring pgBackRest for restore..."
 
 # Check if stanza/backup exists
 echo "Checking for available backups..."
-if ! su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info" > /dev/null 2>&1; then
+if ! run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info > /dev/null 2>&1; then
     echo "ERROR: No backup found for stanza '${PGBACKREST_STANZA}'"
     echo "Cannot restore without an existing backup."
     exit 1
@@ -41,7 +51,7 @@ fi
 
 # Perform restore
 echo "Restoring from latest backup..."
-su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --delta --log-level-console=info restore"
+run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --delta --log-level-console=info restore
 
 echo "Restore completed successfully!"
 echo "PostgreSQL configuration will be applied in next step."

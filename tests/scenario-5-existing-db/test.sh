@@ -146,7 +146,7 @@ fi
 # Test 4: Check stanza was created
 echo ""
 echo "Test 4: Check pgBackRest stanza was created..."
-if docker compose exec -T postgres-ba su - postgres -c "pgbackrest --stanza=test-scenario5 info" > /dev/null 2>&1; then
+if docker compose exec -T postgres-ba su-exec postgres pgbackrest --stanza=test-scenario5 info > /dev/null 2>&1; then
     echo "✅ PASS: Stanza was created"
 else
     echo "❌ FAIL: Stanza was not created"
@@ -158,12 +158,12 @@ fi
 # Test 5: Check backup was created
 echo ""
 echo "Test 5: Check backup was created..."
-BACKUP_INFO=$(docker compose exec -T postgres-ba su - postgres -c "pgbackrest --stanza=test-scenario5 info --output=json" 2>/dev/null)
+BACKUP_INFO=$(docker compose exec -T postgres-ba su-exec postgres pgbackrest --stanza=test-scenario5 info --output=json 2>/dev/null)
 if echo "$BACKUP_INFO" | grep -q '"backup"'; then
     echo "✅ PASS: Backup was created"
     echo ""
     echo "Backup info:"
-    docker compose exec -T postgres-ba su - postgres -c "pgbackrest --stanza=test-scenario5 info"
+    docker compose exec -T postgres-ba su-exec postgres pgbackrest --stanza=test-scenario5 info
 else
     echo "❌ FAIL: No backup found"
     exit 1

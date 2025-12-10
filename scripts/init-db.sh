@@ -11,6 +11,16 @@ set -e
 # This script is IDEMPOTENT - safe to run multiple times
 # If stanza already exists, it will just report that and exit successfully
 
+# Helper function to run commands as postgres user
+# If already running as postgres, run directly; otherwise use su-exec
+run_as_postgres() {
+    if [ "$(id -u)" = "0" ]; then
+        su-exec postgres "$@"
+    else
+        "$@"
+    fi
+}
+
 echo "=========================================="
 echo "pgBackRest Initialization"
 echo "=========================================="
@@ -37,8 +47,8 @@ echo ""
 
 # Check if WAL archiving is configured
 echo "Checking WAL archiving configuration..."
-ARCHIVE_MODE=$(su - postgres -c "psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_mode'")
-ARCHIVE_COMMAND=$(su - postgres -c "psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_command'")
+ARCHIVE_MODE=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_mode')
+ARCHIVE_COMMAND=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_command')
 
 if [ "$ARCHIVE_MODE" != "on" ]; then
     echo "WARNING: archive_mode is not 'on' (current: $ARCHIVE_MODE)"
@@ -65,13 +75,13 @@ echo ""
 
 # Check if stanza already exists
 echo "Checking if stanza already exists..."
-if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info" > /dev/null 2>&1; then
+if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info > /dev/null 2>&1; then
     echo "✓ Stanza '${PGBACKREST_STANZA}' already exists"
     echo ""
     
     # Show stanza info
     echo "Stanza information:"
-    su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
+    run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info
     
     echo ""
     echo "Stanza is ready. No action needed."
@@ -83,7 +93,7 @@ echo ""
 
 # Create stanza
 echo "Creating pgBackRest stanza '${PGBACKREST_STANZA}'..."
-if ! su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --log-level-console=info stanza-create" 2>&1 | tee /tmp/stanza-create.log; then
+if ! run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --log-level-console=info stanza-create 2>&1 | tee /tmp/stanza-create.log; then
     echo ""
     echo "ERROR: Failed to create stanza. Check errors above."
     
@@ -108,12 +118,12 @@ echo "Performing initial full backup..."
 echo "This may take several minutes depending on database size..."
 echo ""
 
-if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup"; then
+if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup; then
     echo ""
     echo "✓ Initial backup completed successfully!"
     echo ""
     echo "Backup information:"
-    su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
+    run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info
 else
     echo ""
     echo "WARNING: Initial backup failed."

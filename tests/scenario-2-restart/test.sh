@@ -135,7 +135,7 @@ fi
 # Test 4: Check stanza still exists
 echo ""
 echo "Test 4: Check stanza still exists..."
-if docker compose exec -T postgres su - postgres -c "pgbackrest --stanza=test-scenario2 info" > /dev/null 2>&1; then
+if docker compose exec -T postgres su-exec postgres pgbackrest --stanza=test-scenario2 info > /dev/null 2>&1; then
     echo "✅ PASS: Stanza still exists"
 else
     echo "❌ FAIL: Stanza not found after restart"
