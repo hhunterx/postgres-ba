@@ -28,6 +28,13 @@ if [ -s "$PGDATA/PG_VERSION" ]; then
     return 0 2>/dev/null || true
 fi
 
+# Validate conflicting modes
+if [ "${PG_MODE}" = "replica" ]; then
+    echo "ERROR: Cannot use RESTORE_FROM_BACKUP=true with PG_MODE=replica"
+    echo "Replicas should be setup from primary, not from backup restore."
+    exit 1
+fi
+
 echo "=========================================="
 echo "Restoring PostgreSQL from backup"
 echo "=========================================="

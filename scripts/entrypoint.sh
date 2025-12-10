@@ -46,16 +46,15 @@ if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-restore-from-backup.s
 fi
 
 # 4. Setup replica (only if DB doesn't exist)
-# TODO: Ensure this works correctly with restore mode
 # TODO: Ensure post-init postgres configuration are valid for replicas
 if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/03-setup-replica.sh ]; then
     source /usr/local/bin/03-setup-replica.sh
 fi
 
 # 5. Configure SSL (always run, both new and existing databases)
-if [ -f /usr/local/bin/10-configure-ssl.sh ]; then
+if [ -f /usr/local/bin/04-configure-ssl.sh ]; then
     echo "Configuring SSL certificates..."
-    source /usr/local/bin/10-configure-ssl.sh
+    source /usr/local/bin/04-configure-ssl.sh
 fi
 
 # # 6. Configure PostgreSQL for existing DBs only

@@ -4,8 +4,8 @@ set -e
 # pgBackRest initialization script
 # 
 # Use cases:
-# 1. Initialize pgBackRest for a NEW database (called by 30-init-db.sh)
-# 2. Initialize pgBackRest for an EXISTING database (called by 99-post-init.sh)
+# 1. Initialize pgBackRest for a NEW database (called by 11-init-db.sh)
+# 2. Initialize pgBackRest for an EXISTING database (called by manually by user.sh)
 # 3. Manual initialization after migration/restore
 #
 # This script is IDEMPOTENT - safe to run multiple times

@@ -28,8 +28,8 @@ Requisitos:
 
 8. Tudo deve vir de variaveis de ambientes passadas para o container
 
-9. criar um docker compose com a stack pronto para uso
+9. criar testes ISOLADOS para cada cenario de teste com as env, compose, e bash e teste
 
-10. criar scripts para subir/gerar/hospedar a imagem docker no github ou atraves de github/actions workflow
-
-11. criar gitignore e dockergnore e outros padroes dos repositorios git
+- nao devem interferir um no outro
+- devem fazer cleanup e apagar volumes ANTES e depois do TESTE, garatindo idempotencia
+- devem realizar todo o ciclo de vida completo do cenario (ex: se é um teste de restore o backup deve ser feito no inicio do mesmo teste do cenario)

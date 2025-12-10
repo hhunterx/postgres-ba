@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# Post-initialization tasks
+# Configure cron jobs for backups
 # This runs on EVERY container start (idempotent)
 
-echo "Running post-initialization tasks..."
+echo "Configuring cron jobs for pgBackRest backups..."
 
 # Setup cron jobs for backups (idempotent)
 if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ]; then
@@ -16,8 +16,16 @@ if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ]; then
         # Kill existing cron if running
         pkill crond 2>/dev/null || true
         sleep 1
-        crond -b -l 8 2>/dev/null || true
+        
+        if ! crond -b -l 8; then
+            echo "ERROR: Failed to start cron daemon. Automated backups will not run."
+            echo "You can manually trigger backups using:"
+            echo "  pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
+            exit 1
+        else
+            echo "✓ Cron daemon started successfully"
+        fi
     fi
 fi
 
-echo "Post-initialization completed."
+echo "Cron job configuration"
