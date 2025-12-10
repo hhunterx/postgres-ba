@@ -12,6 +12,17 @@ echo "This will run all scenario tests."
 echo "Each scenario is isolated and will not interfere with others."
 echo ""
 
+# Ensure MinIO is running
+echo "Checking MinIO service..."
+if ! docker ps | grep -q "tests-minio"; then
+    echo "MinIO not running. Starting MinIO..."
+    ./start-minio.sh
+    echo ""
+else
+    echo "MinIO is already running."
+    echo ""
+fi
+
 FAILED_TESTS=()
 PASSED_TESTS=()
 
