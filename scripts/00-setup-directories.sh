@@ -32,7 +32,7 @@ if [ -n "${PGBACKREST_STANZA}" ]; then
 fi
 
 # Create SSL directory
-mkdir -p /var/lib/postgresql/ssl
-chown -R postgres:postgres /var/lib/postgresql/ssl
+mkdir -p /etc/postgresql/ssl
+chown -R postgres:postgres /etc/postgresql/ssl
 
 echo "Directory setup completed."

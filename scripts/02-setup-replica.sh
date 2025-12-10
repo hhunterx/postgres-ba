@@ -3,18 +3,20 @@ set -e
 
 # Setup PostgreSQL replica using pg_basebackup
 # This runs BEFORE database initialization
+# NOTE: This script is sourced, so use return instead of exit for non-error cases
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
-# Only setup replica if explicitly requested and database doesn't exist
+# Only setup replica if explicitly requested
 if [ "${PG_MODE}" != "replica" ]; then
     echo "PG_MODE is not 'replica', skipping replica setup."
-    exit 0
+    return 0 2>/dev/null || true
 fi
 
+# Skip if database already exists
 if [ -s "$PGDATA/PG_VERSION" ]; then
     echo "Database already exists at $PGDATA, skipping replica setup."
-    exit 0
+    return 0 2>/dev/null || true
 fi
 
 echo "=========================================="

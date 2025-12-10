@@ -1,12 +1,13 @@
 #!/bin/bash
 set -e
 
-# Shared CA directory - should be on a shared volume or passed from primary
-CA_DIR="${CA_DIR:-/var/lib/postgresql/ca}"
+# SSL directories - use /etc/postgresql to avoid polluting PGDATA
+# PGDATA is a symlink to /var/lib/postgresql/, so anything there pollutes it
+CA_DIR="${CA_DIR:-/etc/postgresql/ca}"
 CA_CERT="${CA_DIR}/ca.crt"
 CA_KEY="${CA_DIR}/ca.key"
 
-SSL_DIR="${SSL_CERT_DIR:-/var/lib/postgresql/ssl}"
+SSL_DIR="${SSL_CERT_DIR:-/etc/postgresql/ssl}"
 SERVER_CERT="${SSL_DIR}/server.crt"
 SERVER_KEY="${SSL_DIR}/server.key"
 SERVER_CSR="${SSL_DIR}/server.csr"

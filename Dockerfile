@@ -29,8 +29,10 @@ RUN mkdir -p /var/log/pgbackrest \
   /var/spool/pgbackrest \
   /etc/pgbackrest \
   /etc/pgbackrest/conf.d \
+  /etc/postgresql/ca \
+  /etc/postgresql/ssl \
   /tmp/pgbackrest \
-  && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest /tmp/pgbackrest
+  && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest /etc/postgresql /tmp/pgbackrest
 
 # Copy utility scripts
 COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
@@ -50,6 +52,7 @@ COPY scripts/20-configure-pgbackrest-postgres.sh /usr/local/bin/20-configure-pgb
 COPY scripts/99-post-init.sh /usr/local/bin/99-post-init.sh
 
 # Copy initialization scripts (run by docker-entrypoint.sh)
+COPY scripts/20-configure-postgres-initdb.sh /docker-entrypoint-initdb.d/20-configure-postgres-initdb.sh
 COPY scripts/30-init-db.sh /docker-entrypoint-initdb.d/30-init-db.sh
 
 # Copy main entrypoint

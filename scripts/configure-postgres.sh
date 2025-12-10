@@ -35,9 +35,9 @@ fi
 cat >> ${CUSTOM_CONF} <<EOF
 # SSL Configuration
 ssl = on
-ssl_cert_file = '/var/lib/postgresql/ssl/server.crt'
-ssl_key_file = '/var/lib/postgresql/ssl/server.key'
-ssl_ca_file = '/var/lib/postgresql/ssl/root.crt'
+ssl_cert_file = '/etc/postgresql/ssl/server.crt'
+ssl_key_file = '/etc/postgresql/ssl/server.key'
+ssl_ca_file = '/etc/postgresql/ssl/root.crt'
 
 # Logging
 log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '

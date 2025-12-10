@@ -7,8 +7,8 @@ set -e
 echo "Configuring SSL certificates..."
 
 # Create SSL directory if it doesn't exist
-mkdir -p /var/lib/postgresql/ssl
-chown -R postgres:postgres /var/lib/postgresql/ssl
+mkdir -p /etc/postgresql/ssl
+chown -R postgres:postgres /etc/postgresql/ssl
 
 if [ -f /usr/local/bin/configure-ssl-with-ca.sh ]; then
     /usr/local/bin/configure-ssl-with-ca.sh

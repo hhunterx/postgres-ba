@@ -3,18 +3,19 @@ set -e
 
 # Handle restore from backup
 # This runs BEFORE database initialization
+# NOTE: This script is sourced, so use return instead of exit for non-error cases
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
 # Only restore if explicitly requested and database doesn't exist
 if [ "${RESTORE_FROM_BACKUP}" != "true" ]; then
     echo "RESTORE_FROM_BACKUP not enabled, skipping restore."
-    exit 0
+    return 0 2>/dev/null || true
 fi
 
 if [ -s "$PGDATA/PG_VERSION" ]; then
     echo "Database already exists at $PGDATA, skipping restore."
-    exit 0
+    return 0 2>/dev/null || true
 fi
 
 echo "=========================================="
