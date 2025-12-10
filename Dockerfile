@@ -49,10 +49,14 @@ COPY scripts/02-restore-from-backup.sh /usr/local/bin/02-restore-from-backup.sh
 COPY scripts/03-setup-replica.sh /usr/local/bin/03-setup-replica.sh
 COPY scripts/04-configure-ssl.sh /usr/local/bin/04-configure-ssl.sh
 COPY scripts/09-configure-cron.sh /usr/local/bin/09-configure-cron.sh
+COPY scripts/10-configure-postgres.sh /usr/local/bin/10-configure-postgres.sh
 
 # Copy initialization scripts (run by docker-entrypoint.sh)
-COPY scripts/10-configure-postgres-initdb.sh /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh
-COPY scripts/11-init-db.sh /docker-entrypoint-initdb.d/11-init-db.sh
+COPY scripts/20-new-db-only.sh /docker-entrypoint-initdb.d/20-new-db-only.sh
+
+# Copy post-initialization scripts (run after docker-entrypoint.sh)
+# Runs on entrypoint for both new and existing DBs with a timer subshell to delay execution
+COPY scripts/99-stanza-check.sh /usr/local/bin/99-stanza-check.sh
 
 # Copy main entrypoint
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh

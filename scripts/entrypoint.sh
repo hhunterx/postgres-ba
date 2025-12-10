@@ -49,20 +49,30 @@ if [ -f /usr/local/bin/04-configure-ssl.sh ]; then
     source /usr/local/bin/04-configure-ssl.sh
 fi
 
-# 6. Configure PostgreSQL for existing DBs only
-# (For new DBs, this will run via /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh)
-# configure-postgres.sh handles ALL cases: primary, replica, restored, new DB
-# It builds postgresql.auto.conf incrementally based on mode and environment variables
-if [ -s "$PGDATA/PG_VERSION" ] && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
-    source /usr/local/bin/10-configure-postgres-initdb.sh
-fi
-
-# 7. Post-initialization tasks (always run if pgBackRest enabled and not replica)
-# Sets up cron and schedules init-db.sh (idempotent)
+# 6. Setup cron jobs (always run if pgBackRest enabled and not replica)
+# Sets up cron (idempotent)
 # Replicas do NOT run backup cron jobs
 if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/09-configure-cron.sh ]; then
     source /usr/local/bin/09-configure-cron.sh
 fi
+
+# 7. Configure PostgreSQL (always run, both new and existing databases 
+# It builds postgresql.auto.conf incrementally based on mode and environment variables
+if [ -f /usr/local/bin/10-configure-postgres.sh ]; then
+    source /usr/local/bin/10-configure-postgres.sh
+fi
+
+# 8. Verify stanza configuration (always run if pgBackRest enabled and not replica)
+# This ensures initial backup is performed after PostgreSQL fully starts
+# Only needed if stanza exists but has no backups (e.g., after initdb restart)
+if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/99-stanza-check.sh ]; then
+    (
+        # Wait for PostgreSQL to be fully ready
+        sleep 15
+        /usr/local/bin/99-stanza-check.sh
+    ) &
+fi
+
 
 # ============================================
 # Database initialization phase
