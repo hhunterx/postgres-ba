@@ -45,9 +45,9 @@ COPY scripts/init-db.sh /usr/local/bin/init-db.sh
 COPY scripts/00-setup-directories.sh /usr/local/bin/00-setup-directories.sh
 COPY scripts/01-restore-from-backup.sh /usr/local/bin/01-restore-from-backup.sh
 COPY scripts/02-setup-replica.sh /usr/local/bin/02-setup-replica.sh
+COPY scripts/10-configure-ssl.sh /usr/local/bin/10-configure-ssl.sh
 
 # Copy initialization scripts (run by docker-entrypoint.sh)
-COPY scripts/10-configure-ssl.sh /docker-entrypoint-initdb.d/10-configure-ssl.sh
 COPY scripts/20-configure-pgbackrest-postgres.sh /docker-entrypoint-initdb.d/20-configure-pgbackrest-postgres.sh
 COPY scripts/30-init-db.sh /docker-entrypoint-initdb.d/30-init-db.sh
 COPY scripts/99-post-init.sh /docker-entrypoint-initdb.d/99-post-init.sh

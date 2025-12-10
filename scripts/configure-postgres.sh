@@ -8,11 +8,16 @@ export PGDATA
 echo "Configuring PostgreSQL..."
 echo "Using PGDATA: $PGDATA"
 
+# Create/update custom configuration file (idempotent)
+CUSTOM_CONF="${PGDATA}/postgresql.auto.conf"
+
+# Remove old auto config if exists to ensure clean state
+rm -f ${CUSTOM_CONF}
+
 # Configure pgBackRest-specific settings only if stanza is defined
 if [ "${PGBACKREST_STANZA}" != "" ]; then
     echo "Configuring for pgBackRest with WAL archiving..."
-    cat >> ${PGDATA}/postgresql.conf <<EOF
-
+    cat >> ${CUSTOM_CONF} <<EOF
 # pgBackRest Configuration
 archive_mode = on
 archive_command = 'pgbackrest --stanza=${PGBACKREST_STANZA} archive-push %p'
@@ -22,12 +27,12 @@ archive_timeout = 60
 wal_level = replica
 max_wal_senders = ${MAX_WAL_SENDERS:-10}
 max_replication_slots = ${MAX_REPLICATION_SLOTS:-10}
+
 EOF
 fi
 
 # Always configure SSL
-cat >> ${PGDATA}/postgresql.conf <<EOF
-
+cat >> ${CUSTOM_CONF} <<EOF
 # SSL Configuration
 ssl = on
 ssl_cert_file = '/var/lib/postgresql/ssl/server.crt'
@@ -60,11 +65,14 @@ EOF
 
 # Set pg_hba.conf for replication only if pgBackRest is configured
 if [ "${PGBACKREST_STANZA}" != "" ]; then
-    cat >> ${PGDATA}/pg_hba.conf <<EOF
+    # Only add if not already present (idempotent)
+    if ! grep -q "# Replication connections - SSL required" ${PGDATA}/pg_hba.conf 2>/dev/null; then
+        cat >> ${PGDATA}/pg_hba.conf <<EOF
 
 # Replication connections - SSL required
 hostssl replication     all             0.0.0.0/0               scram-sha-256
 EOF
+    fi
 fi
 
 echo "PostgreSQL configuration completed."
