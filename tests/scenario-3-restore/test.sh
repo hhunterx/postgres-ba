@@ -163,14 +163,14 @@ echo "Checking restore logs..."
 sleep 10
 echo ""
 echo "=== Restore Container Logs (first 50 lines) ==="
-docker compose logs postgres-restore | head -50
+docker compose --profile restore logs postgres-restore | head -50
 echo "=== End of initial logs ==="
 
 # Wait for restore postgres to be healthy
 echo ""
 echo "Step 11: Waiting for restored PostgreSQL to be healthy..."
 for i in {1..120}; do
-    if docker compose exec -T postgres-restore pg_isready -U postgres > /dev/null 2>&1; then
+    if docker compose --profile restore exec -T postgres-restore pg_isready -U postgres > /dev/null 2>&1; then
         echo "Restored PostgreSQL is ready!"
         break
     fi
@@ -178,7 +178,7 @@ for i in {1..120}; do
         echo "FAILED: Restored PostgreSQL did not become ready in time"
         echo ""
         echo "=== Full Restore Container Logs ==="
-        docker compose logs postgres-restore
+        docker compose --profile restore logs postgres-restore
         exit 1
     fi
     echo "Waiting... ($i/120)"
@@ -188,21 +188,21 @@ done
 # Test 1: Check restored data
 echo ""
 echo "Test 1: Check restored data exists..."
-RESTORED_DATA=$(docker compose exec -T postgres-restore psql -U postgres -d testdb -tAc "SELECT unique_value FROM restore_test WHERE unique_value = 'restore_marker_${UNIQUE_ID}'" 2>/dev/null || echo "")
+RESTORED_DATA=$(docker compose --profile restore exec -T postgres-restore psql -U postgres -d testdb -tAc "SELECT unique_value FROM restore_test WHERE unique_value = 'restore_marker_${UNIQUE_ID}'" 2>/dev/null || echo "")
 if [ "$RESTORED_DATA" = "restore_marker_${UNIQUE_ID}" ]; then
     echo "✅ PASS: Data restored correctly (marker: $RESTORED_DATA)"
 else
     echo "❌ FAIL: Data not restored"
     echo "   Expected: restore_marker_${UNIQUE_ID}"
     echo "   Got: $RESTORED_DATA"
-    docker compose logs postgres-restore
+    docker compose --profile restore logs postgres-restore
     exit 1
 fi
 
 # Test 2: Check SSL is enabled on restored instance
 echo ""
 echo "Test 2: Check SSL on restored instance..."
-SSL_STATUS=$(docker compose exec -T postgres-restore psql -U postgres -tAc "SHOW ssl")
+SSL_STATUS=$(docker compose --profile restore exec -T postgres-restore psql -U postgres -tAc "SHOW ssl")
 if [ "$SSL_STATUS" = "on" ]; then
     echo "✅ PASS: SSL is enabled on restored instance"
 else
@@ -213,7 +213,7 @@ fi
 # Test 3: Verify pgBackRest configuration was applied
 echo ""
 echo "Test 3: Verify WAL archiving is configured..."
-ARCHIVE_MODE=$(docker compose exec -T postgres-restore psql -U postgres -tAc "SHOW archive_mode")
+ARCHIVE_MODE=$(docker compose --profile restore exec -T postgres-restore psql -U postgres -tAc "SHOW archive_mode")
 if [ "$ARCHIVE_MODE" = "on" ]; then
     echo "✅ PASS: WAL archiving is enabled (10-configure-postgres.sh was executed)"
 else
@@ -224,18 +224,18 @@ fi
 # Test 4: Verify restore log shows actual restore happened
 echo ""
 echo "Test 4: Verify restore process in logs..."
-if docker compose logs postgres-restore 2>&1 | grep -q "Restoring from latest backup"; then
+if docker compose --profile restore logs postgres-restore 2>&1 | grep -q "Restoring from latest backup"; then
     echo "✅ PASS: Restore process was executed (02-restore-from-backup.sh)"
 else
     echo "❌ FAIL: Restore process not found in logs"
-    docker compose logs postgres-restore
+    docker compose --profile restore logs postgres-restore
     exit 1
 fi
 
 # Test 5: Verify that initdb was NOT executed
 echo ""
 echo "Test 5: Verify initdb was NOT executed..."
-if docker compose logs postgres-restore 2>&1 | grep -q "database system was shut down"; then
+if docker compose --profile restore logs postgres-restore 2>&1 | grep -q "database system was shut down"; then
     echo "✅ PASS: Database was restored (not created via initdb)"
 else
     echo "⚠️  WARNING: Could not confirm database was restored vs created"
@@ -244,7 +244,7 @@ fi
 # Test 6: Verify new backup can be taken from restored instance
 echo ""
 echo "Test 6: Testing backup after restore..."
-if docker compose exec -T postgres-restore su-exec postgres pgbackrest --stanza=test-scenario3 --type=incr backup 2>&1 | grep -q "completed successfully"; then
+if docker compose --profile restore exec -T postgres-restore su-exec postgres pgbackrest --stanza=test-scenario3 --type=incr backup 2>&1 | grep -q "completed successfully"; then
     echo "✅ PASS: Incremental backup works after restore"
 else
     echo "❌ FAIL: Cannot create backup after restore"
