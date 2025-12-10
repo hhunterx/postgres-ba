@@ -74,6 +74,7 @@ fi
 # ============================================
 # Section 2: pgBackRest & WAL Archiving (primary/standalone only)
 # ============================================
+echo "Checking pgBackRest config: PGBACKREST_STANZA='${PGBACKREST_STANZA}', PG_MODE='${PG_MODE}'"
 if [ "${PGBACKREST_STANZA}" != "" ] && [ "${PG_MODE}" != "replica" ]; then
     echo "Configuring for pgBackRest with WAL archiving..."
     cat >> ${CUSTOM_CONF} <<EOF
@@ -143,3 +144,9 @@ EOF
 fi
 
 echo "PostgreSQL configuration completed."
+
+# Ensure correct ownership if running as root
+if [ "$(id -u)" = "0" ]; then
+    chown postgres:postgres ${CUSTOM_CONF}
+fi
+

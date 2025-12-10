@@ -60,6 +60,7 @@ fi
 # For EXISTING databases: run now (postgresql.auto.conf already exists)
 # For RESTORED databases: run now (PGDATA was just created by restore)
 # For NEW databases: will run later via /docker-entrypoint-initdb.d/20-new-db-only.sh (after initdb creates the file)
+echo "Checking if configuration is needed: PG_VERSION exists? $([ -f "${PGDATA}/PG_VERSION" ] && echo yes || echo no)"
 if [ -f "${PGDATA}/PG_VERSION" ] && [ -f /usr/local/bin/10-configure-postgres.sh ]; then
     source /usr/local/bin/10-configure-postgres.sh
 elif [ ! -f "${PGDATA}/PG_VERSION" ]; then

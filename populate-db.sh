@@ -6,7 +6,7 @@ echo "Exemplo: Populando banco de dados"
 echo "=========================================="
 
 # Configurações
-CONTAINER_NAME="${CONTAINER_NAME:-postgres-ba-primary}"
+CONTAINER_NAME="${CONTAINER_NAME:-postgres-ba}"
 DB_USER="${DB_USER:-postgres}"
 DB_NAME="${DB_NAME:-postgres}"
 
@@ -116,6 +116,19 @@ INSERT INTO pedidos (usuario_id, produto_id, quantidade, total, status) VALUES
     (9, 10, 1, 549.90, 'entregue')
 ON CONFLICT DO NOTHING;
 
+-- Inserir 10 pedidos aleatórios a cada execução
+INSERT INTO pedidos (usuario_id, produto_id, quantidade, total, status) VALUES
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END),
+    ((RANDOM() * 9 + 1)::INT, (RANDOM() * 9 + 1)::INT, (RANDOM() * 5 + 1)::INT, (RANDOM() * 3000 + 100)::DECIMAL(10,2), CASE (RANDOM() * 4)::INT WHEN 0 THEN 'entregue' WHEN 1 THEN 'em_transito' WHEN 2 THEN 'processando' WHEN 3 THEN 'pendente' ELSE 'cancelado' END);
+
 EOF
 
 echo "✓ Dados inseridos com sucesso!"
@@ -163,6 +176,31 @@ JOIN pedidos pd ON p.id = pd.produto_id
 GROUP BY p.id, p.nome
 ORDER BY total_vendido DESC
 LIMIT 5;
+
+EOF
+
+echo ""
+echo "=========================================="
+echo "Contagem final de registros por tabela:"
+echo "=========================================="
+
+docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
+
+SELECT 
+    'usuarios' as tabela,
+    COUNT(*) as quantidade
+FROM usuarios
+UNION ALL
+SELECT 
+    'produtos',
+    COUNT(*)
+FROM produtos
+UNION ALL
+SELECT 
+    'pedidos',
+    COUNT(*)
+FROM pedidos
+ORDER BY tabela;
 
 EOF
 
