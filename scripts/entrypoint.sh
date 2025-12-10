@@ -22,9 +22,13 @@ if ! command -v openssl >/dev/null 2>&1 || ! command -v pgbackrest >/dev/null 2>
     ! command -v su-exec >/dev/null 2>&1 && echo "  - su-exec is missing (gosu available as fallback)"
     ! command -v curl >/dev/null 2>&1 && echo "  - curl is missing (wget available as fallback)"
     
+    # Wait for DNS to be ready (DNS initialization can take 60-90s in containerized environments)
+    echo "Waiting 90s for DNS initialization..."
+    sleep 90
+    
     echo "Attempting to install (with retries for DNS issues)..."
     RETRY_COUNT=0
-    MAX_RETRIES=10
+    MAX_RETRIES=5
     INSTALLED=false
     
     while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$INSTALLED" = false ]; do
