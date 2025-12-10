@@ -63,8 +63,9 @@ if [ "$DB_INITIALIZED" = true ] && [ -f /usr/local/bin/10-configure-postgres-ini
     source /usr/local/bin/10-configure-postgres-initdb.sh
 fi
 
-# 7. Post-initialization tasks (always run if pgBackRest enabled)
+# 7. Post-initialization tasks (always run if pgBackRest enabled and not replica)
 # Sets up cron and schedules init-db.sh (idempotent)
+# Replicas do NOT run backup cron jobs
 if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/09-configure-cron.sh ]; then
     source /usr/local/bin/09-configure-cron.sh
 fi
