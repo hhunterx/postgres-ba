@@ -8,8 +8,9 @@ PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
 echo "Applying PostgreSQL configuration..."
 
-# Configure pgBackRest if enabled (and not in replica/restore mode)
-if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ "${RESTORE_FROM_BACKUP}" != "true" ]; then
+# Configure pgBackRest if enabled (and not in replica mode)
+# Note: We need pgBackRest configured even for restore mode (for restore_command)
+if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ]; then
     echo "Configuring pgBackRest for stanza '${PGBACKREST_STANZA}'..."
     /usr/local/bin/configure-pgbackrest.sh
 fi

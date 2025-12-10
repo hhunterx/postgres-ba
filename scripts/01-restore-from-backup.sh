@@ -54,6 +54,18 @@ echo "Restoring from latest backup..."
 run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --delta --log-level-console=info restore
 
 echo "Restore completed successfully!"
+
+# Create a marker file IMMEDIATELY to indicate this is a restored database
+# This will be used by configure-postgres.sh to add restore_command
+# IMPORTANT: Must be created before any other checks that might skip execution
+echo "Creating marker file at ${PGDATA}/.restored_from_backup"
+if run_as_postgres touch "${PGDATA}/.restored_from_backup"; then
+    echo "✓ Marker file created successfully"
+else
+    echo "✗ Failed to create marker file"
+    exit 1
+fi
+
 echo "PostgreSQL configuration will be applied in next step."
 
 # Signal that we've restored and should skip normal init

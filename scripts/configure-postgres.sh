@@ -11,6 +11,13 @@ echo "Using PGDATA: $PGDATA"
 # Create/update custom configuration file (idempotent)
 CUSTOM_CONF="${PGDATA}/postgresql.auto.conf"
 
+# Check if this is a restored database (check for marker file)
+RESTORED_DB=false
+if [ -f "${PGDATA}/.restored_from_backup" ]; then
+    echo "Detected restored database - will add restore_command."
+    RESTORED_DB=true
+fi
+
 # Remove old auto config if exists to ensure clean state
 rm -f ${CUSTOM_CONF}
 
@@ -73,6 +80,18 @@ if [ "${PGBACKREST_STANZA}" != "" ]; then
 hostssl replication     all             0.0.0.0/0               scram-sha-256
 EOF
     fi
+fi
+
+# If this was a restored database, add restore_command for WAL recovery
+if [ "$RESTORED_DB" = true ] && [ -n "${PGBACKREST_STANZA}" ]; then
+    echo "Adding restore_command for WAL recovery..."
+    cat >> ${CUSTOM_CONF} <<EOF
+
+# pgBackRest restore configuration
+restore_command = 'pgbackrest --stanza=${PGBACKREST_STANZA} archive-get %f "%p"'
+EOF
+    # Remove the marker file after configuration
+    rm -f "${PGDATA}/.restored_from_backup"
 fi
 
 echo "PostgreSQL configuration completed."
