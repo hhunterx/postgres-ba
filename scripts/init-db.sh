@@ -1,17 +1,18 @@
 #!/bin/bash
 set -e
 
-# Manual pgBackRest initialization script
+# pgBackRest initialization script
 # 
 # Use cases:
-# 1. Adding pgBackRest to an EXISTING database (not initialized with pgBackRest)
-# 2. Recreating stanza after migration/restore
+# 1. Initialize pgBackRest for a NEW database (called by 30-init-db.sh)
+# 2. Initialize pgBackRest for an EXISTING database (called by 99-post-init.sh)
+# 3. Manual initialization after migration/restore
 #
-# Usage:
-#   docker compose exec postgres-primary /usr/local/bin/run-init-db.sh
+# This script is IDEMPOTENT - safe to run multiple times
+# If stanza already exists, it will just report that and exit successfully
 
 echo "=========================================="
-echo "pgBackRest Manual Initialization"
+echo "pgBackRest Initialization"
 echo "=========================================="
 
 # Check if pgBackRest is configured
@@ -73,8 +74,7 @@ if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info" > /dev/null 
     su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
     
     echo ""
-    echo "To recreate the stanza, first delete it:"
-    echo "  pgbackrest --stanza=${PGBACKREST_STANZA} --force stanza-delete"
+    echo "Stanza is ready. No action needed."
     exit 0
 fi
 
@@ -103,30 +103,22 @@ echo ""
 echo "✓ Stanza created successfully!"
 echo ""
 
-# Perform initial backup
-read -p "Do you want to perform an initial full backup now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+# Perform initial backup (always automatic, no prompting)
+echo "Performing initial full backup..."
+echo "This may take several minutes depending on database size..."
+echo ""
+
+if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup"; then
     echo ""
-    echo "Performing initial full backup..."
-    echo "This may take several minutes depending on database size..."
+    echo "✓ Initial backup completed successfully!"
     echo ""
-    
-    if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup"; then
-        echo ""
-        echo "✓ Initial backup completed successfully!"
-        echo ""
-        echo "Backup information:"
-        su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
-    else
-        echo ""
-        echo "WARNING: Initial backup failed."
-        echo "You can retry manually: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
-    fi
+    echo "Backup information:"
+    su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
 else
     echo ""
-    echo "Skipping initial backup."
-    echo "You can run it manually later: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
+    echo "WARNING: Initial backup failed."
+    echo "You can retry manually: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
+    # Don't fail - cron will retry
 fi
 
 echo ""
@@ -137,6 +129,3 @@ echo ""
 echo "Stanza '${PGBACKREST_STANZA}' is ready to use."
 echo "Automated backups will run according to cron schedule."
 echo ""
-
-# Remove flag if it exists
-rm -f /tmp/pgbackrest-needs-init

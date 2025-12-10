@@ -39,6 +39,7 @@ COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
 COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
 COPY scripts/pgbackrest-wrapper.sh /usr/local/bin/pgbackrest-wrapper.sh
+COPY scripts/init-db.sh /usr/local/bin/init-db.sh
 
 # Copy pre-initialization scripts (run before docker-entrypoint.sh)
 COPY scripts/00-setup-directories.sh /usr/local/bin/00-setup-directories.sh

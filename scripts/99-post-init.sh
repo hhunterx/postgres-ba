@@ -24,13 +24,13 @@ if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ]; then
     
     # Initialize pgBackRest stanza in background after PostgreSQL is ready
     # (idempotent - won't recreate if stanza already exists)
-    if [ -f /usr/local/bin/run-init-db.sh ]; then
+    if [ -f /usr/local/bin/init-db.sh ]; then
         echo "Scheduling pgBackRest stanza initialization..."
         (
             # Wait for PostgreSQL to be fully ready
             sleep 10
             echo "Starting pgBackRest stanza initialization (background)..."
-            /usr/local/bin/run-init-db.sh > /var/log/pgbackrest-init.log 2>&1 || true
+            /usr/local/bin/init-db.sh > /var/log/pgbackrest-init.log 2>&1 || true
             echo "pgBackRest initialization completed. Check /var/log/pgbackrest-init.log for details."
         ) &
     fi
