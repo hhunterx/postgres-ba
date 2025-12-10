@@ -7,6 +7,8 @@ set -e
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
+echo "Checking if replica setup is needed..."
+
 # Only setup replica if explicitly requested
 if [ "${PG_MODE}" != "replica" ]; then
     echo "PG_MODE is not 'replica', skipping replica setup."
@@ -85,6 +87,3 @@ echo "pg_basebackup completed successfully!"
 
 echo "Replica setup completed successfully!"
 echo "Note: PostgreSQL configuration will be applied by configure-postgres.sh"
-
-# Signal that we've setup replica and should skip normal init
-export POSTGRES_HOST_AUTH_METHOD=trust

@@ -27,33 +27,25 @@ echo "Running pre-initialization scripts..."
 if [ -f /usr/local/bin/00-setup-directories.sh ]; then
     source /usr/local/bin/00-setup-directories.sh
 fi
-
-# Check if database already exists
-DB_INITIALIZED=false
-if [ -s "$PGDATA/PG_VERSION" ]; then
-    DB_INITIALIZED=true
-    echo "Database already initialized at ${PGDATA}"
-fi
-
+ 
 # 2. Configure pgBackRest (always run, both new and existing databases)
 if [ -f /usr/local/bin/01-configure-pgbackrest.sh ]; then
     source /usr/local/bin/01-configure-pgbackrest.sh
 fi
 
 # 3. Handle backup restore (only if DB doesn't exist)
-if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/02-restore-from-backup.sh ]; then
+if [ -f /usr/local/bin/02-restore-from-backup.sh ]; then
     source /usr/local/bin/02-restore-from-backup.sh
 fi
 
 # 4. Setup replica (only if DB doesn't exist)
 # Replica configuration is handled by configure-postgres.sh after pg_basebackup
-if [ "$DB_INITIALIZED" = false ] && [ -f /usr/local/bin/03-setup-replica.sh ]; then
+if [ -f /usr/local/bin/03-setup-replica.sh ]; then
     source /usr/local/bin/03-setup-replica.sh
 fi
 
 # 5. Configure SSL (always run, both new and existing databases)
 if [ -f /usr/local/bin/04-configure-ssl.sh ]; then
-    echo "Configuring SSL certificates..."
     source /usr/local/bin/04-configure-ssl.sh
 fi
 
@@ -61,7 +53,7 @@ fi
 # (For new DBs, this will run via /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh)
 # configure-postgres.sh handles ALL cases: primary, replica, restored, new DB
 # It builds postgresql.auto.conf incrementally based on mode and environment variables
-if [ "$DB_INITIALIZED" = true ] && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
+if [ -s "$PGDATA/PG_VERSION" ]; && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
     source /usr/local/bin/10-configure-postgres-initdb.sh
 fi
 
@@ -79,16 +71,8 @@ fi
 # - Run initdb if database doesn't exist
 # - Execute scripts in /docker-entrypoint-initdb.d/ (only on first init!)
 # - Start PostgreSQL
-
-echo ""
-if [ "$DB_INITIALIZED" = true ]; then
-    echo "Starting existing PostgreSQL database..."
-else
-    echo "Initializing new PostgreSQL database..."
-    echo "Scripts in /docker-entrypoint-initdb.d/ will run after initdb"
-fi
+ 
 echo "Database directory: ${PGDATA}"
-echo ""
 
 # Call the official PostgreSQL entrypoint
 # This handles all the standard initialization

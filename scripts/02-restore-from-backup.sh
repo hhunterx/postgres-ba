@@ -7,6 +7,8 @@ set -e
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
+echo "Checking if restore from backup is needed..."
+
 # Helper function to run commands as postgres user
 # If already running as postgres, run directly; otherwise use su-exec
 run_as_postgres() {
@@ -59,4 +61,4 @@ run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --delta --log-level-con
 echo "Restore completed successfully!"
 
 # Signal that we've restored and should skip normal init
-export POSTGRES_HOST_AUTH_METHOD=trust
+export DB_INITIALIZED=true
