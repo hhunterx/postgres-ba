@@ -2,26 +2,24 @@
 FROM postgres:18-alpine AS builder
 
 # Install build dependencies and pgBackRest
-# Combined installation with fallback for QEMU emulation issues
-RUN apk update && \
-  (apk add --no-cache bash curl dcron openssl || \
-  (apk add --no-cache bash curl openssl && apk add --no-cache dcron || true)) && \
+# Use alternative mirror for better connectivity
+RUN echo "http://dl-4.alpinelinux.org/alpine/v3.23/main" > /etc/apk/repositories && \
+  echo "http://dl-4.alpinelinux.org/alpine/v3.23/community" >> /etc/apk/repositories && \
+  apk update --no-cache && \
+  apk add --no-cache bash curl dcron openssl && \
   rm -rf /var/cache/apk/*
 
 # Production stage
 FROM postgres:18-alpine
 
 # Install runtime dependencies
-# Combined installation with fallback for QEMU emulation issues
-RUN apk update && \
-  (apk add --no-cache bash curl dcron openssl su-exec || \
-  (apk add --no-cache bash curl openssl su-exec && apk add --no-cache dcron || true)) && \
+# Use alternative mirror for better connectivity
+RUN echo "http://dl-4.alpinelinux.org/alpine/v3.23/main" > /etc/apk/repositories && \
+  echo "http://dl-4.alpinelinux.org/alpine/v3.23/community" >> /etc/apk/repositories && \
+  apk update --no-cache && \
+  apk add --no-cache bash curl dcron openssl su-exec && \
+  apk add --no-cache pgbackrest postgresql-contrib && \
   rm -rf /var/cache/apk/*
-
-# Install pgBackRest and PostgreSQL extensions
-RUN apk add --no-cache pgbackrest
-RUN apk add --no-cache postgresql-contrib
-RUN rm -rf /var/cache/apk/*
 
 # Create necessary directories
 RUN mkdir -p /var/log/pgbackrest \
