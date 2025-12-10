@@ -1,8 +1,142 @@
 #!/bin/bash
-# Wrapper para executar init-db.sh preservando variáveis de ambiente
+set -e
 
-# Read environment variables from /proc/1/environ (main process)
-eval $(cat /proc/1/environ | tr '\0' '\n' | grep -E '^(POSTGRES_USER|POSTGRES_DB|POSTGRES_PASSWORD|PGBACKREST_STANZA)=' | sed 's/^/export /')
+# Manual pgBackRest initialization script
+# 
+# Use cases:
+# 1. Adding pgBackRest to an EXISTING database (not initialized with pgBackRest)
+# 2. Recreating stanza after migration/restore
+#
+# Usage:
+#   docker compose exec postgres-primary /usr/local/bin/run-init-db.sh
 
-# Run as postgres user with environment variables
-su postgres -c "export POSTGRES_USER='${POSTGRES_USER}'; export POSTGRES_DB='${POSTGRES_DB}'; export PGBACKREST_STANZA='${PGBACKREST_STANZA}'; bash /docker-entrypoint-initdb.d/init-db.sh"
+echo "=========================================="
+echo "pgBackRest Manual Initialization"
+echo "=========================================="
+
+# Check if pgBackRest is configured
+if [ -z "${PGBACKREST_STANZA}" ]; then
+    echo "ERROR: PGBACKREST_STANZA environment variable is not set."
+    echo "Cannot initialize pgBackRest without a stanza name."
+    exit 1
+fi
+
+echo "Stanza: ${PGBACKREST_STANZA}"
+echo ""
+
+# Check if PostgreSQL is running
+echo "Checking PostgreSQL status..."
+if ! pg_isready -U "${POSTGRES_USER:-postgres}" > /dev/null 2>&1; then
+    echo "ERROR: PostgreSQL is not running or not ready."
+    echo "PostgreSQL must be running to create pgBackRest stanza."
+    exit 1
+fi
+echo "✓ PostgreSQL is running"
+echo ""
+
+# Check if WAL archiving is configured
+echo "Checking WAL archiving configuration..."
+ARCHIVE_MODE=$(su - postgres -c "psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_mode'")
+ARCHIVE_COMMAND=$(su - postgres -c "psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_command'")
+
+if [ "$ARCHIVE_MODE" != "on" ]; then
+    echo "WARNING: archive_mode is not 'on' (current: $ARCHIVE_MODE)"
+    echo "pgBackRest requires archive_mode=on in postgresql.conf"
+    echo ""
+    echo "To fix this, add to postgresql.conf:"
+    echo "  archive_mode = on"
+    echo "  archive_command = 'pgbackrest --stanza=${PGBACKREST_STANZA} archive-push %p'"
+    echo "Then restart PostgreSQL."
+    exit 1
+fi
+
+if [[ ! "$ARCHIVE_COMMAND" =~ pgbackrest ]]; then
+    echo "WARNING: archive_command does not use pgbackrest"
+    echo "Current: $ARCHIVE_COMMAND"
+    echo ""
+    echo "To fix this, add to postgresql.conf:"
+    echo "  archive_command = 'pgbackrest --stanza=${PGBACKREST_STANZA} archive-push %p'"
+    echo "Then reload PostgreSQL: pg_ctl reload"
+fi
+
+echo "✓ WAL archiving is configured"
+echo ""
+
+# Check if stanza already exists
+echo "Checking if stanza already exists..."
+if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info" > /dev/null 2>&1; then
+    echo "✓ Stanza '${PGBACKREST_STANZA}' already exists"
+    echo ""
+    
+    # Show stanza info
+    echo "Stanza information:"
+    su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
+    
+    echo ""
+    echo "To recreate the stanza, first delete it:"
+    echo "  pgbackrest --stanza=${PGBACKREST_STANZA} --force stanza-delete"
+    exit 0
+fi
+
+echo "Stanza does not exist. Creating..."
+echo ""
+
+# Create stanza
+echo "Creating pgBackRest stanza '${PGBACKREST_STANZA}'..."
+if ! su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --log-level-console=info stanza-create" 2>&1 | tee /tmp/stanza-create.log; then
+    echo ""
+    echo "ERROR: Failed to create stanza. Check errors above."
+    
+    # Check for common issues
+    if grep -q "do not match the database" /tmp/stanza-create.log; then
+        echo ""
+        echo "This error means a stanza with this name exists in S3 but for a different database."
+        echo "To fix:"
+        echo "  1. Delete the old stanza: pgbackrest --stanza=${PGBACKREST_STANZA} --force stanza-delete"
+        echo "  2. Run this script again"
+    fi
+    
+    exit 1
+fi
+
+echo ""
+echo "✓ Stanza created successfully!"
+echo ""
+
+# Perform initial backup
+read -p "Do you want to perform an initial full backup now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "Performing initial full backup..."
+    echo "This may take several minutes depending on database size..."
+    echo ""
+    
+    if su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-level-console=info backup"; then
+        echo ""
+        echo "✓ Initial backup completed successfully!"
+        echo ""
+        echo "Backup information:"
+        su - postgres -c "pgbackrest --stanza=${PGBACKREST_STANZA} info"
+    else
+        echo ""
+        echo "WARNING: Initial backup failed."
+        echo "You can retry manually: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
+    fi
+else
+    echo ""
+    echo "Skipping initial backup."
+    echo "You can run it manually later: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
+fi
+
+echo ""
+echo "=========================================="
+echo "Initialization complete!"
+echo "=========================================="
+echo ""
+echo "Stanza '${PGBACKREST_STANZA}' is ready to use."
+echo "Automated backups will run according to cron schedule."
+echo ""
+
+# Remove flag if it exists
+rm -f /tmp/pgbackrest-needs-init

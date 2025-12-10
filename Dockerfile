@@ -32,27 +32,31 @@ RUN mkdir -p /var/log/pgbackrest \
   /tmp/pgbackrest \
   && chown -R postgres:postgres /var/log/pgbackrest /var/lib/pgbackrest /var/spool/pgbackrest /etc/pgbackrest /tmp/pgbackrest
 
-# Copy scripts
-COPY scripts/entrypoint-compat.sh /usr/local/bin/entrypoint-compat.sh
+# Copy utility scripts
 COPY scripts/backup-cron.sh /usr/local/bin/backup-cron.sh
 COPY scripts/setup-cron.sh /usr/local/bin/setup-cron.sh
 COPY scripts/configure-postgres.sh /usr/local/bin/configure-postgres.sh
 COPY scripts/configure-pgbackrest.sh /usr/local/bin/configure-pgbackrest.sh
 COPY scripts/configure-ssl-with-ca.sh /usr/local/bin/configure-ssl-with-ca.sh
 COPY scripts/pgbackrest-wrapper.sh /usr/local/bin/pgbackrest-wrapper.sh
-COPY scripts/run-init-db.sh /usr/local/bin/run-init-db.sh
-COPY scripts/init-db.sh /docker-entrypoint-initdb.d/init-db.sh
 
-# Make scripts executable
-RUN chmod +x /usr/local/bin/entrypoint-compat.sh \
-  /usr/local/bin/backup-cron.sh \
-  /usr/local/bin/setup-cron.sh \
-  /usr/local/bin/configure-postgres.sh \
-  /usr/local/bin/configure-pgbackrest.sh \
-  /usr/local/bin/configure-ssl-with-ca.sh \
-  /usr/local/bin/pgbackrest-wrapper.sh \
-  /usr/local/bin/run-init-db.sh \
-  /docker-entrypoint-initdb.d/init-db.sh
+# Copy pre-initialization scripts (run before docker-entrypoint.sh)
+COPY scripts/00-setup-directories.sh /usr/local/bin/00-setup-directories.sh
+COPY scripts/01-restore-from-backup.sh /usr/local/bin/01-restore-from-backup.sh
+COPY scripts/02-setup-replica.sh /usr/local/bin/02-setup-replica.sh
+
+# Copy initialization scripts (run by docker-entrypoint.sh)
+COPY scripts/10-configure-ssl.sh /docker-entrypoint-initdb.d/10-configure-ssl.sh
+COPY scripts/20-configure-pgbackrest-postgres.sh /docker-entrypoint-initdb.d/20-configure-pgbackrest-postgres.sh
+COPY scripts/30-init-db.sh /docker-entrypoint-initdb.d/30-init-db.sh
+COPY scripts/99-post-init.sh /docker-entrypoint-initdb.d/99-post-init.sh
+
+# Copy main entrypoint
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Make all scripts executable
+RUN chmod +x /usr/local/bin/*.sh \
+  /docker-entrypoint-initdb.d/*.sh
 
 # Replace pgbackrest with wrapper to avoid environment variable warnings
 RUN mv /usr/bin/pgbackrest /usr/bin/pgbackrest-orig && \
@@ -63,6 +67,6 @@ HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
   CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
 
 # Set entrypoint - Compatible with official postgres:18-alpine
-# This wrapper handles pgBackRest and SSL setup, then calls docker-entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint-compat.sh"]
+# This entrypoint runs pre-init scripts, then delegates to docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["postgres"]

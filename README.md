@@ -89,6 +89,19 @@ docker-compose -f docker-compose.compat.yml up -d
 docker-compose up -d
 ```
 
+**Option C: Add pgBackRest to Existing Database** ⭐
+
+Already have a PostgreSQL database running and want to add backups?
+
+```bash
+# 1. Add pgBackRest environment variables to your docker-compose.yml
+# 2. Rebuild (preserves your data!)
+docker compose up -d --build
+
+# 3. Initialize pgBackRest manually
+docker compose exec postgres-primary /usr/local/bin/run-init-db.sh
+```
+
 ### 4. Check Logs
 
 ```bash
@@ -337,15 +350,27 @@ git push origin v1.0.0
 
 ### How It Works
 
-1. **Entrypoint Process**:
+#### Modular Entrypoint Architecture
 
-   - Configures pgBackRest with S3 credentials
-   - Checks if PostgreSQL data exists
-   - If no data and `RESTORE_FROM_BACKUP=true`, restores from S3
-   - If no data and `RESTORE_FROM_BACKUP=false`, initializes new database
-   - Configures PostgreSQL for WAL archiving
-   - Sets up automated backup cron jobs
-   - Starts PostgreSQL
+The system uses a **dual-phase execution model** to ensure configurations work on both fresh and existing databases:
+
+**1. Pre-Init Phase** (always runs):
+
+- Detects if database exists (`PG_VERSION` check)
+- Configures directories and permissions
+- Handles restore from S3 (if requested and DB doesn't exist)
+- Handles replica setup (if requested and DB doesn't exist)
+- **Applies SSL configuration** (every container start)
+- **Applies pgBackRest/PostgreSQL configs** (every container start)
+- **Ensures cron daemon running** (every container start)
+
+**2. Init-DB Phase** (first initialization only):
+
+- Runs only when database is being created
+- Executes custom schema/data initialization scripts
+- Uses Docker's native `/docker-entrypoint-initdb.d/` hooks
+
+> **Important:** Scripts are **idempotent** - safe to run multiple times. SSL certs, pgBackRest configs, and cron jobs work correctly on container restarts, not just fresh initialization.
 
 2. **Backup Process**:
 
