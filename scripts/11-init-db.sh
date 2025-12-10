@@ -128,9 +128,9 @@ if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --type=full --log-le
     run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info
 else
     echo ""
-    echo "WARNING: Initial backup failed."
+    echo "ERROR: Initial backup failed."
     echo "You can retry manually: pgbackrest --stanza=${PGBACKREST_STANZA} --type=full backup"
-    # Don't fail - cron will retry
+    exit 1
 fi
 
 echo ""
