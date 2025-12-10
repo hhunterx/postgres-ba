@@ -8,9 +8,18 @@ echo "Setting up directories and permissions..."
 
 PGDATA=${PGDATA:-/var/lib/postgresql/18/docker}
 
-# Ensure PostgreSQL data directory has correct permissions
-mkdir -p "${PGDATA}"
-chown -R postgres:postgres "${PGDATA}"
+# Only create PGDATA directory if it already has content (existing DB)
+# For new databases, let docker-entrypoint.sh handle PGDATA creation
+# This avoids initdb errors about "directory exists but is not empty"
+if [ -f "${PGDATA}/PG_VERSION" ]; then
+    echo "Existing database detected, ensuring correct permissions..."
+    chown -R postgres:postgres "${PGDATA}"
+else
+    echo "New database - PGDATA will be created by initdb"
+    # Ensure parent directory exists with correct permissions
+    mkdir -p "$(dirname "${PGDATA}")"
+    chown -R postgres:postgres "$(dirname "${PGDATA}")"
+fi
 
 # Create pgBackRest directories if enabled
 if [ -n "${PGBACKREST_STANZA}" ]; then

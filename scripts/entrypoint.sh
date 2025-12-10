@@ -56,10 +56,13 @@ if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/l
     source /usr/local/bin/09-configure-cron.sh
 fi
 
-# 7. Configure PostgreSQL (always run, both new and existing databases 
-# It builds postgresql.auto.conf incrementally based on mode and environment variables
-if [ -f /usr/local/bin/10-configure-postgres.sh ]; then
+# 7. Configure PostgreSQL 
+# For EXISTING databases: run now (postgresql.auto.conf already exists)
+# For NEW databases: will run later via /docker-entrypoint-initdb.d/20-new-db-only.sh (after initdb creates the file)
+if [ -f "${PGDATA}/PG_VERSION" ] && [ -f /usr/local/bin/10-configure-postgres.sh ]; then
     source /usr/local/bin/10-configure-postgres.sh
+elif [ ! -f "${PGDATA}/PG_VERSION" ]; then
+    echo "New database - PostgreSQL configuration will run after initdb via /docker-entrypoint-initdb.d/"
 fi
 
 # 8. Verify stanza configuration (always run if pgBackRest enabled and not replica)
