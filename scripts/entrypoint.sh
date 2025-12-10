@@ -53,7 +53,7 @@ fi
 # (For new DBs, this will run via /docker-entrypoint-initdb.d/10-configure-postgres-initdb.sh)
 # configure-postgres.sh handles ALL cases: primary, replica, restored, new DB
 # It builds postgresql.auto.conf incrementally based on mode and environment variables
-if [ -s "$PGDATA/PG_VERSION" ]; && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
+if [ -s "$PGDATA/PG_VERSION" ] && [ -f /usr/local/bin/10-configure-postgres-initdb.sh ]; then
     source /usr/local/bin/10-configure-postgres-initdb.sh
 fi
 
