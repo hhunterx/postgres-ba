@@ -196,11 +196,18 @@ docker-entrypoint.sh (oficial)
 
 **Legenda:**
 
-- **(1) NEW DB**: Novo banco de dados do zero
+- **(1) NEW DB**: Novo banco de dados do zero (initdb)
 - **(2) RESTART EXIST**: Restart de banco existente
-- **(3) RESTORE**: Restore de backup S3
-- **(4) REPLICA**: Modo replica (pg_basebackup)
+- **(3) RESTORE**: Restore de backup S3 (cria PGDATA via pgbackrest restore)
+- **(4) REPLICA**: Modo replica (cria PGDATA via pg_basebackup)
 - **(5) MIGRAÇÃO**: Migração de banco oficial postgres:18
+
+**Nota Importante sobre PGDATA**:
+
+- Cenários (1) e (5): PGDATA criado via `initdb`
+- Cenário (3): PGDATA criado via `pgbackrest restore` (antes do docker-entrypoint.sh)
+- Cenário (4): PGDATA criado via `pg_basebackup` (antes do docker-entrypoint.sh)
+- Cenário (2): PGDATA já existe de execução anterior
 
 ---
 
@@ -283,11 +290,13 @@ docker-entrypoint.sh (oficial)
 
 **Condições Iniciais**:
 
-- PGDATA vazio
+- PGDATA vazio (NÃO existe PG_VERSION)
 - PG_MODE não definido (ou "primary")
 - RESTORE_FROM_BACKUP=true
 - PGBACKREST_STANZA definido
 - **Pré-requisito**: Backup existente no S3/repo
+
+**⚠️ IMPORTANTE**: O script `02-restore-from-backup.sh` **CRIA o PGDATA** completo através do comando `pgbackrest restore`. Após o restore, o PGDATA existe e o PostgreSQL inicia normalmente sem precisar de `initdb`.
 
 **Preparação do Teste**:
 
@@ -304,23 +313,29 @@ docker-entrypoint.sh (oficial)
 3. `02-restore-from-backup.sh` → **EXECUTA RESTORE**
    - Valida backup existe (pgbackrest info)
    - Executa pgbackrest restore
+   - **CRIA TODO O PGDATA** com arquivos restaurados do backup
 4. `03-setup-replica.sh` → pula (PG_MODE ≠ replica)
 5. `04-configure-ssl.sh` → gera/valida certificados
 6. `09-configure-cron.sh` → configura cron
-7. `10-configure-postgres.sh` → pula (será configurado depois)
-8. `docker-entrypoint.sh` → **NÃO executa initdb** (PGDATA já populado)
-9. PostgreSQL inicia
-10. `99-stanza-check.sh` → valida stanza
+7. `10-configure-postgres.sh` → **EXECUTA** (PGDATA agora existe após restore)
+   - Aplica configurações PostgreSQL em postgresql.auto.conf
+   - Configura WAL archiving
+8. `docker-entrypoint.sh` → **NÃO executa initdb** (PGDATA já existe/populado pelo restore)
+9. PostgreSQL inicia com dados restaurados
+10. `99-stanza-check.sh` → valida stanza (não cria novamente)
 
 **Validações**:
 
 - [ ] Restore completa com sucesso
+- [ ] PGDATA é criado pelo pgbackrest restore
 - [ ] Dados restaurados corretamente
 - [ ] PostgreSQL inicia normalmente
+- [ ] 10-configure-postgres.sh é executado (PGDATA existe após restore)
 - [ ] WAL archiving funciona após restore
 - [ ] Backup incremental funciona após restore
-- [ ] Não executa initdb
-- [ ] Configurações PostgreSQL aplicadas
+- [ ] Não executa initdb (PGDATA já existe)
+- [ ] Não executa 20-new-db-only.sh (não é DB novo)
+- [ ] Configurações PostgreSQL aplicadas via 10-configure-postgres.sh
 
 ---
 
