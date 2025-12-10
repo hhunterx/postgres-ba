@@ -37,7 +37,7 @@ echo ""
 
 # Check if PostgreSQL is running
 echo "Checking PostgreSQL status..."
-if ! pg_isready -U "${POSTGRES_USER:-postgres}" > /dev/null 2>&1; then
+if ! pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" > /dev/null 2>&1; then
     echo "ERROR: PostgreSQL is not running or not ready."
     echo "PostgreSQL must be running to create pgBackRest stanza."
     exit 1
@@ -47,8 +47,8 @@ echo ""
 
 # Check if WAL archiving is configured
 echo "Checking WAL archiving configuration..."
-ARCHIVE_MODE=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_mode')
-ARCHIVE_COMMAND=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -tAc 'SHOW archive_command')
+ARCHIVE_MODE=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres} -tAc 'SHOW archive_mode')
+ARCHIVE_COMMAND=$(run_as_postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres} -tAc 'SHOW archive_command')
 
 if [ "$ARCHIVE_MODE" != "on" ]; then
     echo "WARNING: archive_mode is not 'on' (current: $ARCHIVE_MODE)"
