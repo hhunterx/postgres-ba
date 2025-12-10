@@ -13,6 +13,8 @@ unset PGBACKREST_S3_REGION 2>/dev/null || true
 unset PGBACKREST_S3_ACCESS_KEY 2>/dev/null || true
 unset PGBACKREST_S3_SECRET_KEY 2>/dev/null || true
 unset PGBACKREST_S3_PATH 2>/dev/null || true
+unset PGBACKREST_S3_URI_STYLE 2>/dev/null || true
+unset PGBACKREST_S3_VERIFY_TLS 2>/dev/null || true
 
 # Execute pgBackRest with all other environment variables intact
 exec "$PGBACKREST_BIN" "$@"

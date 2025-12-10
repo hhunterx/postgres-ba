@@ -73,15 +73,17 @@ fi
 echo "✓ WAL archiving is configured"
 echo ""
 
-# Check if stanza already exists
+# Check if stanza already exists (with backup)
 echo "Checking if stanza already exists..."
-if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info > /dev/null 2>&1; then
-    echo "✓ Stanza '${PGBACKREST_STANZA}' already exists"
+STANZA_INFO=$(run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info 2>&1)
+# Check if stanza exists AND has a backup (not just "missing stanza path" or "error")
+if echo "$STANZA_INFO" | grep -q "status: ok\|full backup"; then
+    echo "✓ Stanza '${PGBACKREST_STANZA}' already exists with backup"
     echo ""
     
     # Show stanza info
     echo "Stanza information:"
-    run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info
+    echo "$STANZA_INFO"
     
     echo ""
     echo "Stanza is ready. No action needed."

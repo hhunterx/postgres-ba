@@ -12,6 +12,7 @@ echo "Configuring pgBackRest..."
 echo "Using PGDATA: $PGDATA"
 
 # Create pgBackRest configuration file
+# For MinIO/S3-compatible storage, use repo1-storage-verify-tls=n for self-signed certs
 cat > /etc/pgbackrest/pgbackrest.conf <<EOF
 [global]
 repo1-type=s3
@@ -20,6 +21,8 @@ repo1-s3-endpoint=${PGBACKREST_S3_ENDPOINT:-s3.amazonaws.com}
 repo1-s3-region=${PGBACKREST_S3_REGION:-us-east-1}
 repo1-s3-key=${PGBACKREST_S3_ACCESS_KEY}
 repo1-s3-key-secret=${PGBACKREST_S3_SECRET_KEY}
+repo1-s3-uri-style=${PGBACKREST_S3_URI_STYLE:-host}
+repo1-storage-verify-tls=${PGBACKREST_S3_VERIFY_TLS:-y}
 repo1-path=${PGBACKREST_S3_PATH:-/pgbackrest}
 repo1-retention-full=${RETENTION_FULL:-3}
 repo1-retention-diff=${RETENTION_DIFF:-14}
