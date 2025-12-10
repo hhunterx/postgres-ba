@@ -1,24 +1,30 @@
 services:
+  # Generate TLS certificates for MinIO
   minio-certs:
-    image: alpine/openssl:latest
+    image: alpine:latest
     container_name: scenario5-minio-certs
     volumes:
       - minio-certs:/certs
-    entrypoint: >
-      /bin/sh -c "
-      if [ ! -f /certs/private.key ]; then
-        openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 
-          -subj '/C=US/ST=State/L=City/O=Organization/CN=minio' 
-          -keyout /certs/private.key 
-          -out /certs/public.crt;
-        chmod 644 /certs/private.key /certs/public.crt;
-      fi
-      "
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache openssl
+        if [ ! -f /certs/public.crt ]; then
+          echo 'Generating MinIO TLS certificates...'
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/private.key -out /certs/public.crt -subj '/CN=minio' -addext 'subjectAltName=DNS:minio,DNS:localhost,IP:127.0.0.1'
+          chmod 644 /certs/public.crt
+          chmod 600 /certs/private.key
+          echo 'Certificates generated successfully'
+        else
+          echo 'Certificates already exist'
+        fi
+        ls -la /certs/
 
   minio:
     image: minio/minio:latest
     container_name: scenario5-minio
-    command: server /data --console-address ":9001" --certs-dir /root/.minio/certs
+    command: server /data --console-address ":9001" --certs-dir /certs
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -27,15 +33,15 @@ services:
       - "9501:9001"
     volumes:
       - minio-data:/data
-      - minio-certs:/root/.minio/certs
+      - minio-certs:/certs:ro
     depends_on:
       minio-certs:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "mc", "ready", "local", "--insecure"]
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   minio-setup:
     image: minio/mc:latest
@@ -46,7 +52,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set myminio https://minio:9000 minioadmin minioadmin --insecure;
-      mc mb myminio/pgbackrest --ignore-existing;
+      mc mb myminio/pgbackrest --ignore-existing --insecure;
       exit 0;
       "
 
@@ -95,7 +101,7 @@ services:
       - ba
 
 volumes:
-  minio-certs:
   minio-data:
+  minio-certs:
   postgres-data:
   postgres-ssl:
