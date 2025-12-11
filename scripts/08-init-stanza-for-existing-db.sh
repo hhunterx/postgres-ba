@@ -34,48 +34,20 @@ if [ ! -f "${PGDATA}/PG_VERSION" ]; then
     return 0
 fi
 
-echo "Existing database detected, checking stanza status..."
-
-# Start PostgreSQL temporarily in single-user mode to create stanza
-# We need PostgreSQL running to verify database system identifier
-echo "Starting PostgreSQL temporarily to initialize stanza..."
-
-# Start PostgreSQL in background
-run_as_postgres postgres -D "${PGDATA}" &
-PG_PID=$!
-
-# Wait for PostgreSQL to be ready
-echo "Waiting for PostgreSQL to be ready..."
-for i in {1..30}; do
-    if run_as_postgres pg_isready -U postgres > /dev/null 2>&1; then
-        echo "✓ PostgreSQL is ready"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "ERROR: PostgreSQL failed to start within 30 seconds"
-        kill $PG_PID 2>/dev/null || true
-        exit 1
-    fi
-    sleep 1
-done
+echo "Existing database detected, creating stanza before PostgreSQL starts..."
 
 # Check if stanza already exists
-echo "Checking if stanza '${PGBACKREST_STANZA}' exists..."
 if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} info > /dev/null 2>&1; then
-    echo "✓ Stanza already exists"
-else
-    echo "Creating stanza '${PGBACKREST_STANZA}'..."
-    if ! run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --log-level-console=info stanza-create; then
-        echo "ERROR: Failed to create stanza"
-        kill $PG_PID 2>/dev/null || true
-        exit 1
-    fi
-    echo "✓ Stanza created successfully"
+    echo "✓ Stanza '${PGBACKREST_STANZA}' already exists"
+    return 0
 fi
 
-# Stop temporary PostgreSQL instance
-echo "Stopping temporary PostgreSQL instance..."
-run_as_postgres pg_ctl -D "${PGDATA}" -m fast stop
-wait $PG_PID 2>/dev/null || true
-
-echo "Stanza initialization completed."
+# Create stanza in OFFLINE mode (doesn't require PostgreSQL to be running)
+# This is safe because we just need to read PGDATA to get database system identifier
+echo "Creating stanza '${PGBACKREST_STANZA}' in offline mode..."
+if run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --no-online --log-level-console=info stanza-create; then
+    echo "✓ Stanza created successfully before PostgreSQL startup!"
+else
+    echo "WARNING: Failed to create stanza in offline mode."
+    echo "         The stanza will be created after PostgreSQL starts (via 99-stanza-check.sh)"
+fi

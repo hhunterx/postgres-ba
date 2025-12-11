@@ -89,7 +89,7 @@ fi
 echo "Stanza does not exist. Creating..."
 echo ""
 
-# Create stanza
+# Create stanza in ONLINE mode (PostgreSQL is running)
 echo "Creating pgBackRest stanza '${PGBACKREST_STANZA}'..."
 if ! run_as_postgres pgbackrest --stanza=${PGBACKREST_STANZA} --log-level-console=info stanza-create 2>&1 | tee /tmp/stanza-create.log; then
     echo ""
