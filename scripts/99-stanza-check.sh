@@ -31,9 +31,13 @@ fi
 echo "Stanza: ${PGBACKREST_STANZA}"
 echo ""
 
+# Get PostgreSQL user and database from environment
+PG_USER=${POSTGRES_USER:-postgres}
+PG_DB=${POSTGRES_DB:-postgres}
+
 # Check if PostgreSQL is running
 echo "Checking PostgreSQL status..."
-if ! pg_isready -U postgres -d postgres > /dev/null 2>&1; then
+if ! pg_isready -U "$PG_USER" -d "$PG_DB" > /dev/null 2>&1; then
     echo "ERROR: PostgreSQL is not running or not ready."
     echo "PostgreSQL must be running to create pgBackRest stanza."
     exit 1
@@ -43,8 +47,8 @@ echo ""
 
 # Check if WAL archiving is configured
 echo "Checking WAL archiving configuration..."
-ARCHIVE_MODE=$(run_as_postgres psql -U postgres -d postgres -tAc 'SHOW archive_mode')
-ARCHIVE_COMMAND=$(run_as_postgres psql -U postgres -d postgres -tAc 'SHOW archive_command')
+ARCHIVE_MODE=$(run_as_postgres psql -U "$PG_USER" -d "$PG_DB" -tAc 'SHOW archive_mode')
+ARCHIVE_COMMAND=$(run_as_postgres psql -U "$PG_USER" -d "$PG_DB" -tAc 'SHOW archive_command')
 
 if [ "$ARCHIVE_MODE" != "on" ]; then
     echo "WARNING: archive_mode is not 'on' (current: $ARCHIVE_MODE)"
