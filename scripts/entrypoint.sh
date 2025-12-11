@@ -56,7 +56,14 @@ if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/l
     source /usr/local/bin/09-configure-cron.sh
 fi
 
-# 7. Configure PostgreSQL 
+# 7. Initialize pgBackRest stanza for EXISTING databases
+# This must run BEFORE configuring PostgreSQL to ensure stanza exists
+# when archive_command is first executed
+if [ -f /usr/local/bin/08-init-stanza-for-existing-db.sh ]; then
+    source /usr/local/bin/08-init-stanza-for-existing-db.sh
+fi
+
+# 8. Configure PostgreSQL 
 # For EXISTING databases: run now (postgresql.auto.conf already exists)
 # For RESTORED databases: run now (PGDATA was just created by restore)
 # For NEW databases: will run later via /docker-entrypoint-initdb.d/20-new-db-only.sh (after initdb creates the file)
@@ -67,7 +74,7 @@ elif [ ! -f "${PGDATA}/PG_VERSION" ]; then
     echo "New database - PostgreSQL configuration will run after initdb via /docker-entrypoint-initdb.d/"
 fi
 
-# 8. Verify stanza configuration (always run if pgBackRest enabled and not replica)
+# 9. Verify stanza configuration (always run if pgBackRest enabled and not replica)
 # This ensures initial backup is performed after PostgreSQL fully starts
 # Only needed if stanza exists but has no backups (e.g., after initdb restart)
 if [ -n "${PGBACKREST_STANZA}" ] && [ "${PG_MODE}" != "replica" ] && [ -f /usr/local/bin/99-stanza-check.sh ]; then

@@ -48,6 +48,7 @@ COPY scripts/01-configure-pgbackrest.sh /usr/local/bin/01-configure-pgbackrest.s
 COPY scripts/02-restore-from-backup.sh /usr/local/bin/02-restore-from-backup.sh
 COPY scripts/03-setup-replica.sh /usr/local/bin/03-setup-replica.sh
 COPY scripts/04-configure-ssl.sh /usr/local/bin/04-configure-ssl.sh
+COPY scripts/08-init-stanza-for-existing-db.sh /usr/local/bin/08-init-stanza-for-existing-db.sh
 COPY scripts/09-configure-cron.sh /usr/local/bin/09-configure-cron.sh
 COPY scripts/10-configure-postgres.sh /usr/local/bin/10-configure-postgres.sh
 

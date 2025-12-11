@@ -24,11 +24,14 @@ echo "Step 1: Cleaning previous test..."
 cleanup
 sleep 2
 
-# Start minio first
+# Check if MinIO is running
 echo ""
-echo "Step 2: Starting MinIO..."
-docker compose up -d minio minio-setup
-sleep 5
+echo "Step 2: Checking MinIO availability..."
+if ! docker ps | grep -q tests-minio; then
+    echo "ERROR: MinIO is not running. Please run '../start-minio.sh' first."
+    exit 1
+fi
+echo "MinIO is running."
 
 # Start official postgres to create database
 echo ""
