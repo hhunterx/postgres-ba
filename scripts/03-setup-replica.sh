@@ -58,7 +58,7 @@ PGPASSWORD="${POSTGRES_PASSWORD}" psql \
     -h "${PRIMARY_HOST}" \
     -p "${PRIMARY_PORT:-5432}" \
     -U "${POSTGRES_USER:-postgres}" \
-    -d postgres \
+    -d "${POSTGRES_DB:-postgres}" \
     -c "SELECT pg_create_physical_replication_slot('${SLOT_NAME}');" 2>/dev/null || \
     echo "Replication slot may already exist, continuing..."
 
