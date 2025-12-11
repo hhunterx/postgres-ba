@@ -4,16 +4,17 @@ Docker image based on PostgreSQL 18 (Alpine) with automated pgBackRest backups t
 
 ## Features
 
+**Core Features (Implemented & Tested)**:
+
 - ✅ PostgreSQL 18 on Alpine Linux
-- ✅ pgBackRest for enterprise-grade backup and restore
-- ✅ Automated backups to S3 (full, differential, incremental)
-- ✅ Automatic restore from S3 on first startup
-- ✅ WAL archiving every 60 seconds
-- ✅ **SSL/TLS with Self-Signed Certificates (10 years validity)**
-- ✅ **Shared CA for Primary/Replica validation**
-- ✅ Primary/Replica support
+- ✅ pgBackRest integration for backup/restore
+- ✅ S3-compatible storage support (AWS S3, MinIO)
+- ✅ Automated restore from S3 (`RESTORE_FROM_BACKUP=true`)
+- ✅ SSL/TLS with auto-generated certificates (10 years validity)
+- ✅ Primary/Replica replication via `pg_basebackup`
+- ✅ Drop-in replacement for postgres:18-alpine
 - ✅ Configurable via environment variables
-- ✅ Automated cron-based backup scheduling
+- ✅ Idempotent scripts (safe container restarts)
 
 ## Backup Schedule
 
@@ -65,58 +66,47 @@ Copy the example environment file and edit it with your S3 credentials (optional
 cp .env.example .env
 ```
 
-### 3. Choose Your Setup
+### 3. Start the Database
 
-**Option A: Drop-in Replacement (Compatibility Mode)**
-
-- No pgBackRest features
-- Pure PostgreSQL with SSL only
-- Use `docker-compose.compat.yml`
-- Perfect for existing postgres:18-alpine deployments
+**Basic Setup (with pgBackRest & S3 Backups)**
 
 ```bash
-docker-compose -f docker-compose.compat.yml up -d
-```
+# Edit .env.local with your S3 credentials
+cp .env.example .env.local
 
-**Option B: Full Featured (with pgBackRest & S3 Backups)**
-
-- Include pgBackRest for automated S3 backups
-- Requires S3 configuration in `.env`
-- Use regular `docker-compose.yml`
-
-```bash
-# Edit .env with your S3 credentials first
+# Start PostgreSQL with pgBackRest
 docker-compose up -d
 ```
 
-**Option C: Add pgBackRest to Existing Database** ⭐
+**Drop-in Replacement Mode** (Optional)
+
+To use without pgBackRest features, simply don't set `PGBACKREST_STANZA` environment variable:
+
+```bash
+# In your .env.local, comment out or remove:
+# PGBACKREST_STANZA=
+
+docker-compose up -d
+```
+
+**Add pgBackRest to Existing Database** ⭐
 
 Already have a PostgreSQL database running and want to add backups?
 
 ```bash
-# 1. Add pgBackRest environment variables to your docker-compose.yml
-# 2. Rebuild (preserves your data!)
+# 1. Add pgBackRest environment variables to your .env.local
+# 2. Rebuild and restart (preserves your data!)
 docker compose up -d --build
 
-# 3. Initialize pgBackRest manually
-docker compose exec postgres-primary /usr/local/bin/run-init-db.sh
+# 3. Initialize pgBackRest stanza manually
+docker compose exec postgres bash /usr/local/bin/08-init-stanza-for-existing-db.sh
 ```
 
 ### 4. Check Logs
 
 ```bash
-# Compatibility mode
-docker-compose -f docker-compose.compat.yml logs -f
-
-# Full featured
 docker-compose logs -f
 ```
-
-## Docker Compose Files
-
-- **`docker-compose.yml`** - Full featured with pgBackRest & S3 backups
-- **`docker-compose.cluster.yml`** - Cluster setup (primary + replica with pgBackRest)
-- **`docker-compose.compat.yml`** - Compatibility mode (drop-in replacement)
 
 ## Drop-in Replacement Mode
 
@@ -350,34 +340,38 @@ git push origin v1.0.0
 
 ### How It Works
 
-#### Modular Entrypoint Architecture
+#### Three-Phase Entrypoint Architecture
 
-The system uses a **dual-phase execution model** to ensure configurations work on both fresh and existing databases:
+The system uses a **three-phase execution model** that delegates to the official PostgreSQL entrypoint:
 
-**1. Pre-Init Phase** (always runs):
+**Phase 1: Pre-Initialization** (always runs before PostgreSQL starts):
 
-- Detects if database exists (`PG_VERSION` check)
-- Configures directories and permissions
-- Handles restore from S3 (if requested and DB doesn't exist)
-- Handles replica setup (if requested and DB doesn't exist)
-- **Applies SSL configuration** (every container start)
-- **Applies pgBackRest/PostgreSQL configs** (every container start)
-- **Ensures cron daemon running** (every container start)
+1. **00-setup-directories.sh** - Creates/validates directories and permissions
+2. **01-configure-pgbackrest.sh** - Configures pgBackRest (skipped for replicas)
+3. **02-restore-from-backup.sh** - Restores from S3 backup if `RESTORE_FROM_BACKUP=true` and PGDATA empty
+4. **03-setup-replica.sh** - Sets up replica via `pg_basebackup` if `PG_MODE=replica` and PGDATA empty
+5. **04-configure-ssl.sh** - Generates/validates SSL certificates (every start)
+6. **09-configure-cron.sh** - Configures backup cron jobs (skipped for replicas)
+7. **10-configure-postgres.sh** - Applies PostgreSQL configs if PGDATA exists
 
-**2. Init-DB Phase** (first initialization only):
+**Phase 2: PostgreSQL Initialization** (delegates to official `docker-entrypoint.sh`):
 
-- Runs only when database is being created
-- Executes custom schema/data initialization scripts
-- Uses Docker's native `/docker-entrypoint-initdb.d/` hooks
+- If PGDATA empty: runs `initdb`, then executes scripts in `/docker-entrypoint-initdb.d/`
+  - **20-new-db-only.sh** - Configures WAL archiving and replication for new databases
+- If PGDATA exists: starts PostgreSQL normally
 
-> **Important:** Scripts are **idempotent** - safe to run multiple times. SSL certs, pgBackRest configs, and cron jobs work correctly on container restarts, not just fresh initialization.
+**Phase 3: Post-Initialization** (background, after PostgreSQL ready):
 
-2. **Backup Process**:
+- **99-stanza-check.sh** - Creates pgBackRest stanza and initial backup (new databases only)
 
-   - Cron triggers backup scripts at scheduled intervals
-   - pgBackRest performs backup (full/diff/incr) to S3
-   - WAL files are archived to S3 every 60 seconds
-   - Backup logs are maintained in `/var/log/pgbackrest/`
+> **Key Design:** Scripts are **idempotent** and support both new and existing databases. PGDATA can be created by `initdb` (new DB), `pgbackrest restore` (restore scenario), or `pg_basebackup` (replica scenario).
+
+**Backup Process**:
+
+- Cron triggers backup scripts at scheduled intervals
+- pgBackRest performs backup (full/diff/incr) to S3
+- WAL files are archived to S3 every 60 seconds
+- Backup logs are maintained in `/var/log/pgbackrest/`
 
 3. **Restore Process**:
    - On first startup with empty data directory
@@ -543,12 +537,61 @@ Adjust backup parallelism:
 PGBACKREST_PROCESS_MAX=8
 ```
 
+## Test Scenarios
+
+The project includes comprehensive automated tests in the `/tests` directory. All tests use a shared MinIO instance for S3-compatible storage.
+
+### Implemented Test Scenarios ✅
+
+1. **Scenario 1: New Database** - Creates database from scratch with pgBackRest
+2. **Scenario 2: Restart** - Tests container restart with existing database
+3. **Scenario 3: Restore from Backup** - Restores database from S3 backup
+4. **Scenario 4: Primary/Replica** - Tests replication setup with `pg_basebackup`
+5. **Scenario 5: Existing Database Migration** - Migrates from official postgres:18-alpine
+
+### Running Tests
+
+```bash
+# Run all tests (automatically starts MinIO)
+cd tests
+./run-all-tests.sh
+
+# Run individual test
+cd tests/scenario-1-new-db
+./test.sh
+
+# Manage MinIO manually
+cd tests
+./start-minio.sh  # Start shared MinIO
+./stop-minio.sh   # Stop shared MinIO
+```
+
+### Test Infrastructure
+
+- **Shared MinIO**: Single S3-compatible storage (ports 9000/9001)
+- **Isolated Buckets**: Each scenario uses dedicated bucket (scenario1, scenario2, etc.)
+- **Cleanup**: Tests clean up before/after for idempotency
+- **MinIO Console**: Access at https://localhost:9001 (minioadmin/minioadmin)
+
+### Missing Test Scenarios ⚠️
+
+Based on [entrypoint flow documentation](docs/entrypoint-flow-and-test-scenarios.md):
+
+- **Scenario 6**: Restore with Delta (partial restore)
+- **Scenario 7**: Backup Testing (manual full/diff/incr, cron execution, retention)
+- **Scenario 8**: WAL Archiving (archive_command, 60s timeout)
+- **Scenario 9**: Failover (replica → primary promotion)
+- **Scenario 10**: SSL Testing (provided certificates, replication SSL)
+- **Scenario 11**: Error Handling (invalid configs, connection failures, permissions)
+
+See [docs/entrypoint-flow-and-test-scenarios.md](docs/entrypoint-flow-and-test-scenarios.md) for detailed test requirements and gaps.
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly using the test scenarios
 5. Submit a pull request
 
 ## License
@@ -565,24 +608,51 @@ For issues and questions:
 
 ## Changelog
 
-### v1.0.0 - Production Ready ✅
+### Current Status - Development/Beta
 
-- Initial release
-- PostgreSQL 18 with pgBackRest
-- Automated S3 backups (full/diff/incr)
-- WAL archiving every 60 seconds
-- Automated restore from S3
-- Docker Compose stack
-- GitHub Actions CI/CD
-- **SSL/TLS with self-signed certificates (10 years validity)**
-- **Shared CA for Primary/Replica validation**
-- **Drop-in replacement mode for postgres:18-alpine (100% compatible)**
+**Implemented Features ✅**:
+
+- PostgreSQL 18-alpine base image
+- pgBackRest integration with S3 support
+- Automated S3 backups (full/diff/incr via cron)
+- WAL archiving with 60-second timeout
+- Automated restore from S3 (`RESTORE_FROM_BACKUP=true`)
+- SSL/TLS with self-signed certificates (10 years validity)
+- Primary/Replica support via `pg_basebackup`
+- Drop-in replacement compatibility with postgres:18-alpine
+- Environment variable configuration
+- Idempotent scripts for container restarts
+- Dual-phase entrypoint (pre-init + official docker-entrypoint.sh)
+- Comprehensive test scenarios (5/11 implemented)
+
+**Known Limitations ⚠️**:
+
+- Test coverage incomplete (see [Test Scenarios](#test-scenarios) section)
+- Missing validation tests for:
+  - Backup types (full/diff/incr manual execution)
+  - WAL archiving functionality
+  - Cron job execution
+  - Error handling scenarios
+  - SSL certificate management edge cases
+- Replica-to-primary failover not tested
+- Backup retention policy not validated
+
+**Recommended for**:
+
+- Development and testing environments
+- Non-critical workloads
+- Proof-of-concept deployments
+
+**Not recommended for**:
+
+- Production critical systems (until test coverage complete)
+- Environments requiring certified backup/recovery procedures
 
 ---
 
-## ✅ Status: Production Ready
+## 🚧 Status: Beta (Functional but Test Coverage Incomplete)
 
-This image is **100% compatible with postgres:18-alpine** and can be used as a drop-in replacement:
+This image is **functionally complete** and **100% compatible with postgres:18-alpine**, but requires additional test validation before production use:
 
 ### Before (postgres:18-alpine)
 
@@ -619,7 +689,9 @@ See [Compatibility Report](docs/compatibility-report.md) for detailed validation
 
 ## Documentation
 
-- [SSL/TLS Configuration](docs/ssl-configuration.md) - Portuguese guide for SSL setup
-- [Compatibility Report](docs/compatibility-report.md) - Validation of drop-in replacement
+- [Entrypoint Flow & Test Scenarios](docs/entrypoint-flow-and-test-scenarios.md) - Complete architecture and test coverage analysis
+- [Requirements](docs/requirements.md) - Project requirements and objectives
+- [SSL/TLS Configuration](docs/ssl-configuration.md) - SSL setup guide
 - [Utilities Documentation](docs/utilities-cmd.md) - Command line utilities
-- [Cluster Restore Guide](docs/cluster-restore.md) - Instructions for cluster backup/restore
+
+**Coverage Status**: See [entrypoint flow documentation](docs/entrypoint-flow-and-test-scenarios.md) for detailed mapping of requirements to test scenarios and identified gaps.
