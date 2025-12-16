@@ -106,28 +106,6 @@ ssl_cert_file = '/etc/postgresql/ssl/server.crt'
 ssl_key_file = '/etc/postgresql/ssl/server.key'
 ssl_ca_file = '/etc/postgresql/ssl/root.crt'
 
-# Logging
-log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
-log_checkpoints = on
-log_connections = on
-log_disconnections = on
-log_lock_waits = on
-log_temp_files = 0
-log_autovacuum_min_duration = 0
-log_error_verbosity = default
-
-# Performance
-shared_buffers = ${SHARED_BUFFERS:-1GB}
-effective_cache_size = ${EFFECTIVE_CACHE_SIZE:-3GB}
-maintenance_work_mem = ${MAINTENANCE_WORK_MEM:-256MB}
-checkpoint_completion_target = 0.9
-wal_buffers = 16MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = ${WORK_MEM:-16MB}
-min_wal_size = 1GB
-max_wal_size = 4GB
 EOF
 
 # Set pg_hba.conf for replication only if not in replica mode

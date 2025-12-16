@@ -212,10 +212,6 @@ environment:
 
 | Variable                | Description              | Default |
 | ----------------------- | ------------------------ | ------- |
-| `SHARED_BUFFERS`        | Shared buffer size       | `256MB` |
-| `EFFECTIVE_CACHE_SIZE`  | Effective cache size     | `1GB`   |
-| `MAINTENANCE_WORK_MEM`  | Maintenance work memory  | `64MB`  |
-| `WORK_MEM`              | Work memory per query    | `4MB`   |
 | `MAX_WAL_SENDERS`       | Max WAL sender processes | `10`    |
 | `MAX_REPLICATION_SLOTS` | Max replication slots    | `10`    |
 
@@ -519,16 +515,6 @@ docker exec postgres-ba-primary openssl verify -CAfile \
 ```
 
 ## Performance Tuning
-
-Adjust PostgreSQL settings based on your hardware:
-
-```env
-# For 8GB RAM system
-SHARED_BUFFERS=2GB
-EFFECTIVE_CACHE_SIZE=6GB
-MAINTENANCE_WORK_MEM=512MB
-WORK_MEM=16MB
-```
 
 Adjust backup parallelism:
 
